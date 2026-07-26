@@ -1,4 +1,4 @@
-export type EmotionType = 'Happy' | 'Sad' | 'Neutral' | 'Angry' | 'Surprise';
+export type EmotionType = 'Happy' | 'Sad' | 'Neutral' | 'Angry';
 
 export interface Track {
   id: string;
@@ -8,8 +8,6 @@ export interface Track {
   mood: EmotionType;
   genre: string;
   duration: number;
-  youtubeId?: string;
-  youtubeUrl?: string;
   audioUrl: string;
   coverUrl: string;
   themeColor: string;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart3, Clock, PieChart, Sparkles } from 'lucide-react';
+import { BarChart3, Clock } from 'lucide-react';
 import { EmotionType } from '../types';
 
 interface MoodAnalyticsProps {
@@ -11,8 +11,7 @@ const EMOTION_COLORS: Record<EmotionType, string> = {
   Happy: '#EAB308',
   Sad: '#3B82F6',
   Neutral: '#8B5CF6',
-  Angry: '#EF4444',
-  Surprise: '#EC4899'
+  Angry: '#EF4444'
 };
 
 export const MoodAnalytics: React.FC<MoodAnalyticsProps> = ({ history, accentColor }) => {
@@ -23,10 +22,9 @@ export const MoodAnalytics: React.FC<MoodAnalyticsProps> = ({ history, accentCol
     Sad: history.filter(h => h === 'Sad').length,
     Neutral: history.filter(h => h === 'Neutral').length,
     Angry: history.filter(h => h === 'Angry').length,
-    Surprise: history.filter(h => h === 'Surprise').length,
   };
 
-  const emotions: EmotionType[] = ['Happy', 'Neutral', 'Sad', 'Angry', 'Surprise'];
+  const emotions: EmotionType[] = ['Happy', 'Neutral', 'Sad', 'Angry'];
 
   return (
     <div className="glass-panel" style={{ padding: '1.25rem', marginTop: '1.5rem' }}>
@@ -38,12 +36,11 @@ export const MoodAnalytics: React.FC<MoodAnalyticsProps> = ({ history, accentCol
         </div>
         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
           <Clock size={12} />
-          <span>{history.length} Live Samples</span>
+          <span>{history.length} Live Check-Ins</span>
         </div>
       </div>
 
-      {/* Analytics Grid Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '0.75rem', marginBottom: '1.25rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '0.75rem', marginBottom: '1.25rem' }}>
         {emotions.map(m => {
           const cnt = counts[m];
           const pct = ((cnt / totalDetections) * 100).toFixed(0);
@@ -67,14 +64,13 @@ export const MoodAnalytics: React.FC<MoodAnalyticsProps> = ({ history, accentCol
                 {pct}%
               </div>
               <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>
-                {cnt} detections
+                {cnt} check-ins
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* Mood History Sequence Stream */}
       <div>
         <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: 500 }}>
           Recent Mood Timeline
@@ -87,11 +83,11 @@ export const MoodAnalytics: React.FC<MoodAnalyticsProps> = ({ history, accentCol
                 width: '12px',
                 height: '12px',
                 borderRadius: '50%',
-                backgroundColor: EMOTION_COLORS[item],
-                boxShadow: `0 0 6px ${EMOTION_COLORS[item]}`,
+                backgroundColor: EMOTION_COLORS[item] || '#8B5CF6',
+                boxShadow: `0 0 6px ${EMOTION_COLORS[item] || '#8B5CF6'}`,
                 display: 'inline-block'
               }}
-              title={`Sample #${idx + 1}: ${item}`}
+              title={`Check-in #${idx + 1}: ${item}`}
             />
           ))}
         </div>

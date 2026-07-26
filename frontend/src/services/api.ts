@@ -165,47 +165,6 @@ const MOCK_TRACKS: Track[] = [
     coverUrl: "https://images.unsplash.com/photo-1483664852095-d6cc6870702d?w=500&auto=format&fit=crop&q=80",
     themeColor: "#B91C1C",
     bpm: 58
-  },
-
-  // 5. SURPRISE / EXCITED (Synthwave & Future Bass)
-  {
-    id: "sp_01",
-    title: "Neon Miracle",
-    artist: "Future Odyssey",
-    album: "Wonderland",
-    mood: "Surprise",
-    genre: "Synthwave / Future Bass",
-    duration: 215,
-    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3",
-    coverUrl: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80",
-    themeColor: "#EC4899",
-    bpm: 132
-  },
-  {
-    id: "sp_02",
-    title: "Cosmic Wonder",
-    artist: "Starlight Synthesizer",
-    album: "Galactic Shift",
-    mood: "Surprise",
-    genre: "Hyperpop Electro",
-    duration: 188,
-    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3",
-    coverUrl: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=500&auto=format&fit=crop&q=80",
-    themeColor: "#F472B6",
-    bpm: 135
-  },
-  {
-    id: "sp_03",
-    title: "Unreal Discovery",
-    artist: "Quantum Glitch",
-    album: "Anomaly",
-    mood: "Surprise",
-    genre: "Electro Synth",
-    duration: 198,
-    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3",
-    coverUrl: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=500&auto=format&fit=crop&q=80",
-    themeColor: "#DB2777",
-    bpm: 138
   }
 ];
 
@@ -216,7 +175,7 @@ export async function fetchRecommendations(mood: EmotionType): Promise<Track[]> 
       return await res.json();
     }
   } catch (err) {
-    console.warn("Backend API offline; using local 15-song audio dataset.", err);
+    console.warn("Backend API offline; using local 12-song audio dataset.", err);
   }
 
   const matched = MOCK_TRACKS.filter(t => t.mood === mood);

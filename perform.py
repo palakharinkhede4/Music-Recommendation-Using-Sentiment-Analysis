@@ -8,14 +8,13 @@ import cv2
 import numpy as np
 
 # Class labels mapped to feelings and music genres
-CLASS_LABELS = ['Angry', 'Happy', 'Neutral', 'Sad', 'Surprise']
+CLASS_LABELS = ['Angry', 'Happy', 'Neutral', 'Sad']
 
 RECOMMENDATIONS = {
-    'Happy': ['Upbeat Pop', 'Dance Classics', 'Feel Good Acoustic', 'Phonk / Energy High'],
-    'Sad': ['Chill Lo-Fi Beats', 'Acoustic Indie', 'Deep Ambient Piano', 'Melancholic Strings'],
-    'Angry': ['Hard Rock / Heavy Metal', 'Aggressive Phonk', 'Workout EDM', 'Punk Rock'],
-    'Neutral': ['Lo-Fi Study Beats', 'Chillout Ambient', 'Deep House', 'Soft Jazz'],
-    'Surprise': ['Future Bass', 'Hyperpop', 'Electro Swing', 'Synthwave']
+    'Happy': ['Dance / Upbeat Pop'],
+    'Sad': ['Motivational Pop / Uplifting Songs'],
+    'Neutral': ['Lo-Fi Study Beats / Ambient Chillout'],
+    'Angry': ['Calm Acoustic / Relaxing Meditation Music']
 }
 
 def load_cascade():

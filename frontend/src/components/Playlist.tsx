@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Music, Search, Play, Youtube, Sparkles } from 'lucide-react';
+import { Music, Search, Play } from 'lucide-react';
 import { Track, EmotionType } from '../types';
 
 interface PlaylistProps {
@@ -11,7 +11,7 @@ interface PlaylistProps {
   onFilterMood: (mood: EmotionType) => void;
 }
 
-const MOODS: EmotionType[] = ['Happy', 'Neutral', 'Sad', 'Angry', 'Surprise'];
+const MOODS: EmotionType[] = ['Happy', 'Neutral', 'Sad', 'Angry'];
 
 export const Playlist: React.FC<PlaylistProps> = ({
   tracks,
@@ -34,14 +34,12 @@ export const Playlist: React.FC<PlaylistProps> = ({
   return (
     <div className="glass-panel" style={{ padding: '1.25rem' }}>
       
-      {/* Header & Search Bar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Music size={18} color={accentColor} />
           <h2 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0 }}>Recommended Playlist</h2>
         </div>
 
-        {/* Search Bar */}
         <div style={{
           position: 'relative',
           display: 'flex',
@@ -69,7 +67,6 @@ export const Playlist: React.FC<PlaylistProps> = ({
         </div>
       </div>
 
-      {/* Mood Filter Tabs */}
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
         {MOODS.map(m => {
           const isActive = m === selectedMood;
@@ -96,7 +93,6 @@ export const Playlist: React.FC<PlaylistProps> = ({
         })}
       </div>
 
-      {/* Tracks List */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '380px', overflowY: 'auto' }}>
         {filteredTracks.length > 0 ? (
           filteredTracks.map(t => {
@@ -117,7 +113,6 @@ export const Playlist: React.FC<PlaylistProps> = ({
                   cursor: 'pointer'
                 }}
               >
-                {/* Track Thumbnail */}
                 <div style={{
                   position: 'relative',
                   width: '42px',
@@ -141,24 +136,18 @@ export const Playlist: React.FC<PlaylistProps> = ({
                   )}
                 </div>
 
-                {/* Track Meta */}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <h4 style={{
-                      fontSize: '0.9rem',
-                      fontWeight: isCurrent ? 700 : 500,
-                      margin: 0,
-                      color: isCurrent ? accentColor : 'var(--text-main)',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis'
-                    }}>
-                      {t.title}
-                    </h4>
-                    {t.youtubeId && (
-                      <Youtube size={12} color="#FF0000" />
-                    )}
-                  </div>
+                  <h4 style={{
+                    fontSize: '0.9rem',
+                    fontWeight: isCurrent ? 700 : 500,
+                    margin: 0,
+                    color: isCurrent ? accentColor : 'var(--text-main)',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}>
+                    {t.title}
+                  </h4>
                   <p style={{
                     fontSize: '0.75rem',
                     color: 'var(--text-muted)',
@@ -171,7 +160,6 @@ export const Playlist: React.FC<PlaylistProps> = ({
                   </p>
                 </div>
 
-                {/* Mood Tag & Duration */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <span style={{
                     fontSize: '0.7rem',

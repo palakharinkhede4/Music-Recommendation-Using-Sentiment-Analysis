@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, Disc, Sparkles, RefreshCw, ExternalLink, Youtube } from 'lucide-react';
+import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, Disc, Sparkles, RefreshCw } from 'lucide-react';
 import { Track, EmotionType } from '../types';
 
 interface MusicPlayerProps {
@@ -27,15 +27,13 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
   const [duration, setDuration] = useState<number>(0);
   const [volume, setVolume] = useState<number>(0.8);
   const [isMuted, setIsMuted] = useState<boolean>(false);
-  const [playerMode, setPlayerMode] = useState<'youtube' | 'audio'>('youtube');
 
-  // Play audio when track changes
   useEffect(() => {
-    if (audioRef.current && track && playerMode === 'audio') {
+    if (audioRef.current && track) {
       audioRef.current.currentTime = 0;
       audioRef.current.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
     }
-  }, [track, playerMode]);
+  }, [track]);
 
   const togglePlay = () => {
     if (!audioRef.current) return;
@@ -94,7 +92,6 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
       background: `linear-gradient(145deg, rgba(17, 24, 39, 0.8), ${accentColor}11)`
     }}>
       
-      {/* Hidden HTML5 Audio Element */}
       <audio
         ref={audioRef}
         src={track.audioUrl}
@@ -102,127 +99,75 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
         onEnded={onNext}
       />
 
-      {/* Top Header & Youtube Switch */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Sparkles size={18} color={accentColor} />
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0 }}>YouTube Music Player</h2>
+          <h2 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0 }}>Recommended Player</h2>
         </div>
 
-        {/* Mode Switcher */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <button
-            onClick={() => setPlayerMode(playerMode === 'youtube' ? 'audio' : 'youtube')}
-            style={{
-              background: 'rgba(255,255,255,0.06)',
-              border: '1px solid var(--border-glass)',
-              color: 'var(--text-main)',
-              padding: '0.35rem 0.75rem',
-              borderRadius: 'var(--radius-full)',
-              fontSize: '0.75rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.4rem'
-            }}
-          >
-            <Youtube size={14} color="#FF0000" />
-            <span>Mode: {playerMode === 'youtube' ? 'YouTube Embed' : 'Audio Stream'}</span>
-          </button>
-
-          <button
-            onClick={onToggleAutoSync}
-            style={{
-              background: autoSync ? `${accentColor}22` : 'rgba(255,255,255,0.05)',
-              border: `1px solid ${autoSync ? accentColor : 'var(--border-glass)'}`,
-              color: autoSync ? accentColor : 'var(--text-muted)',
-              padding: '0.35rem 0.75rem',
-              borderRadius: 'var(--radius-full)',
-              fontSize: '0.75rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.4rem'
-            }}
-          >
-            <RefreshCw size={12} style={{ animation: autoSync ? 'spin 6s linear infinite' : 'none' }} />
-            <span>Auto Mood: {autoSync ? 'ON' : 'OFF'}</span>
-          </button>
-        </div>
+        <button
+          onClick={onToggleAutoSync}
+          style={{
+            background: autoSync ? `${accentColor}22` : 'rgba(255,255,255,0.05)',
+            border: `1px solid ${autoSync ? accentColor : 'var(--border-glass)'}`,
+            color: autoSync ? accentColor : 'var(--text-muted)',
+            padding: '0.35rem 0.75rem',
+            borderRadius: 'var(--radius-full)',
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <RefreshCw size={12} style={{ animation: autoSync ? 'spin 6s linear infinite' : 'none' }} />
+          <span>Auto Mood: {autoSync ? 'ON' : 'OFF'}</span>
+        </button>
       </div>
 
-      {/* Embedded YouTube Music Player View */}
-      {playerMode === 'youtube' && track.youtubeId && (
-        <div style={{
-          width: '100%',
-          height: '240px',
-          borderRadius: 'var(--radius-md)',
-          overflow: 'hidden',
-          marginBottom: '1.25rem',
-          border: `1px solid ${accentColor}44`,
-          backgroundColor: '#000'
-        }}>
-          <iframe
-            width="100%"
-            height="100%"
-            src={`https://www.youtube-nocookie.com/embed/${track.youtubeId}?autoplay=1&enablejsapi=1`}
-            title={track.title}
-            frameBorder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          />
-        </div>
-      )}
-
-      {/* Track Art & Info Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '1.25rem' }}>
         <div style={{
           position: 'relative',
-          width: '72px',
-          height: '72px',
+          width: '76px',
+          height: '76px',
           borderRadius: 'var(--radius-md)',
           overflow: 'hidden',
           boxShadow: `0 8px 24px ${accentColor}44`,
           flexShrink: 0
         }}>
           <img src={track.coverUrl} alt={track.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          {isPlaying && (
+            <div style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'rgba(0,0,0,0.35)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '3px'
+            }}>
+              <div className="equalizer-bar" />
+              <div className="equalizer-bar" />
+              <div className="equalizer-bar" />
+            </div>
+          )}
         </div>
 
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-            <span style={{
-              padding: '0.15rem 0.5rem',
-              backgroundColor: `${accentColor}25`,
-              color: accentColor,
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.7rem',
-              fontWeight: 700
-            }}>
-              RECOMMENDED FOR {currentMood.toUpperCase()}
-            </span>
-
-            {track.youtubeUrl && (
-              <a
-                href={track.youtubeUrl}
-                target="_blank"
-                rel="noreferrer"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.25rem',
-                  fontSize: '0.7rem',
-                  color: '#FF4E4E',
-                  textDecoration: 'none',
-                  fontWeight: 600
-                }}
-              >
-                <ExternalLink size={12} />
-                Open on YT Music
-              </a>
-            )}
-          </div>
+          <span style={{
+            padding: '0.15rem 0.5rem',
+            backgroundColor: `${accentColor}25`,
+            color: accentColor,
+            borderRadius: 'var(--radius-sm)',
+            fontSize: '0.7rem',
+            fontWeight: 700,
+            display: 'inline-block',
+            marginBottom: '0.25rem'
+          }}>
+            MATCHED FOR {currentMood.toUpperCase()}
+          </span>
 
           <h3 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {track.title}
@@ -233,85 +178,63 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
         </div>
       </div>
 
-      {/* Audio Progress Slider (for Audio Mode) */}
-      {playerMode === 'audio' && (
-        <>
-          <div style={{ marginBottom: '1.25rem' }}>
-            <input
-              type="range"
-              min={0}
-              max={duration || 100}
-              value={currentTime}
-              onChange={handleSeek}
-              style={{ width: '100%', accentColor: accentColor, cursor: 'pointer' }}
-            />
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-              <span>{formatTime(currentTime)}</span>
-              <span>{formatTime(duration)}</span>
-            </div>
-          </div>
+      <div style={{ marginBottom: '1.25rem' }}>
+        <input
+          type="range"
+          min={0}
+          max={duration || 100}
+          value={currentTime}
+          onChange={handleSeek}
+          style={{ width: '100%', accentColor: accentColor, cursor: 'pointer' }}
+        />
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+          <span>{formatTime(currentTime)}</span>
+          <span>{formatTime(duration)}</span>
+        </div>
+      </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '120px' }}>
-              <button
-                onClick={() => {
-                  if (audioRef.current) {
-                    audioRef.current.muted = !isMuted;
-                    setIsMuted(!isMuted);
-                  }
-                }}
-                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
-              >
-                {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-              </button>
-              <input
-                type="range"
-                min={0}
-                max={1}
-                step={0.05}
-                value={isMuted ? 0 : volume}
-                onChange={handleVolumeChange}
-                style={{ width: '80px', accentColor: accentColor }}
-              />
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <button onClick={onPrev} style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-glass)', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-main)', cursor: 'pointer' }}>
-                <SkipBack size={18} />
-              </button>
-
-              <button onClick={togglePlay} style={{ background: `linear-gradient(135deg, ${accentColor}, #6366F1)`, border: 'none', borderRadius: '50%', width: '54px', height: '54px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFF', cursor: 'pointer', boxShadow: `0 0 20px ${accentColor}88` }}>
-                {isPlaying ? <Pause size={24} /> : <Play size={24} style={{ marginLeft: '3px' }} />}
-              </button>
-
-              <button onClick={onNext} style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-glass)', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-main)', cursor: 'pointer' }}>
-                <SkipForward size={18} />
-              </button>
-            </div>
-
-            <div style={{ width: '120px', textAlign: 'right', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              <span style={{ fontWeight: 600, color: accentColor }}>{track.bpm}</span> BPM
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* Footer Switch Controls when in YouTube mode */}
-      {playerMode === 'youtube' && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '0.5rem', borderTop: '1px solid var(--border-glass)' }}>
-          <button onClick={onPrev} style={{ background: 'var(--bg-glass-card)', border: '1px solid var(--border-glass)', borderRadius: 'var(--radius-sm)', padding: '0.5rem 1rem', color: 'var(--text-main)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}>
-            <SkipBack size={16} /> Previous Track
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '120px' }}>
+          <button
+            onClick={() => {
+              if (audioRef.current) {
+                audioRef.current.muted = !isMuted;
+                setIsMuted(!isMuted);
+              }
+            }}
+            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+          >
+            {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
           </button>
-          
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            Playing via YouTube Music
-          </span>
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.05}
+            value={isMuted ? 0 : volume}
+            onChange={handleVolumeChange}
+            style={{ width: '80px', accentColor: accentColor }}
+          />
+        </div>
 
-          <button onClick={onNext} style={{ background: 'var(--bg-glass-card)', border: '1px solid var(--border-glass)', borderRadius: 'var(--radius-sm)', padding: '0.5rem 1rem', color: 'var(--text-main)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}>
-            Next Track <SkipForward size={16} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <button onClick={onPrev} style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-glass)', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-main)', cursor: 'pointer' }}>
+            <SkipBack size={18} />
+          </button>
+
+          <button onClick={togglePlay} style={{ background: `linear-gradient(135deg, ${accentColor}, #6366F1)`, border: 'none', borderRadius: '50%', width: '54px', height: '54px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFF', cursor: 'pointer', boxShadow: `0 0 20px ${accentColor}88` }}>
+            {isPlaying ? <Pause size={24} /> : <Play size={24} style={{ marginLeft: '3px' }} />}
+          </button>
+
+          <button onClick={onNext} style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-glass)', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-main)', cursor: 'pointer' }}>
+            <SkipForward size={18} />
           </button>
         </div>
-      )}
+
+        <div style={{ width: '120px', textAlign: 'right', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+          <span style={{ fontWeight: 600, color: accentColor }}>{track.bpm}</span> BPM
+        </div>
+      </div>
 
     </div>
   );

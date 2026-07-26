@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Camera, RefreshCw, Upload, Sparkles, CheckCircle2, Zap, UserCheck, Flame, Smile, Frown, Meh } from 'lucide-react';
+import { Camera, RefreshCw, Upload, Sparkles, CheckCircle2 } from 'lucide-react';
 import { EmotionType, EmotionScore } from '../types';
 
 interface MoodScannerModalProps {
@@ -13,16 +13,14 @@ const EMOTION_COLORS: Record<EmotionType, string> = {
   Happy: '#EAB308',
   Sad: '#3B82F6',
   Neutral: '#8B5CF6',
-  Angry: '#EF4444',
-  Surprise: '#EC4899'
+  Angry: '#EF4444'
 };
 
 const VIBE_TAGS: Record<EmotionType, string> = {
-  Happy: 'Main Character Energy ✨',
-  Sad: 'Melancholic Serenade 🌧️',
-  Neutral: 'Deep Focus & Zen 🎧',
-  Angry: 'High Octane Power 🔥',
-  Surprise: 'Mind Blown Euphoria 🚀'
+  Happy: 'Upbeat Energy & Dance Vibe ✨',
+  Sad: 'Uplifting & Motivational Courage 🌅',
+  Neutral: 'Deep Focus & Ambient Zen 🎧',
+  Angry: 'Calm, Peaceful & Relaxing Serenity 🕊️'
 };
 
 export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
@@ -40,7 +38,6 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
   const [snapshotUrl, setSnapshotUrl] = useState<string | null>(null);
   const [detectedMood, setDetectedMood] = useState<EmotionType | null>(null);
 
-  // Initialize camera when component mounts or opens
   useEffect(() => {
     let stream: MediaStream | null = null;
 
@@ -74,7 +71,6 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
     };
   }, [isOpen, snapshotUrl]);
 
-  // Capture Single Frame Snapshot
   const captureSnapshot = () => {
     if (!videoRef.current || !canvasRef.current) return;
 
@@ -107,8 +103,7 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
       const dataUrl = canvas.toDataURL('image/png');
       setSnapshotUrl(dataUrl);
 
-      // Analyze Snapshot Frame
-      const emotionsList: EmotionType[] = ['Happy', 'Neutral', 'Sad', 'Surprise', 'Angry'];
+      const emotionsList: EmotionType[] = ['Happy', 'Neutral', 'Sad', 'Angry'];
       const primary = emotionsList[Math.floor(Math.random() * emotionsList.length)];
       setDetectedMood(primary);
 
@@ -135,7 +130,7 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
       const dataUrl = event.target?.result as string;
       setSnapshotUrl(dataUrl);
       
-      const emotionsList: EmotionType[] = ['Happy', 'Neutral', 'Sad', 'Surprise', 'Angry'];
+      const emotionsList: EmotionType[] = ['Happy', 'Neutral', 'Sad', 'Angry'];
       const primary = emotionsList[Math.floor(Math.random() * emotionsList.length)];
       setDetectedMood(primary);
 
@@ -174,13 +169,12 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
         background: 'linear-gradient(160deg, rgba(17, 24, 39, 0.95), rgba(10, 14, 23, 0.98))'
       }}>
         
-        {/* Modal Title */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
             <Sparkles color={accentColor} size={22} />
             <div>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>Vibe Scan & Check-In</h2>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>Capture a 1-frame snapshot to unlock your personalized playlist</p>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>1-frame snapshot face scan for 4 core emotions</p>
             </div>
           </div>
 
@@ -192,7 +186,6 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
           </button>
         </div>
 
-        {/* Viewport Frame */}
         <div style={{
           position: 'relative',
           width: '100%',
@@ -213,14 +206,12 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
           ) : (
             <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
               <Camera size={48} style={{ opacity: 0.4, marginBottom: '0.5rem' }} />
-              <p style={{ fontSize: '0.9rem' }}>Camera Offline or Uploading</p>
+              <p style={{ fontSize: '0.9rem' }}>Camera Offline</p>
             </div>
           )}
 
-          {/* Hidden Canvas */}
           <canvas ref={canvasRef} style={{ display: 'none' }} />
 
-          {/* Countdown Overlay */}
           {countdown !== null && (
             <div style={{
               position: 'absolute',
@@ -238,7 +229,6 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
             </div>
           )}
 
-          {/* Detected Mood Overlay Badge */}
           {detectedMood && (
             <div style={{
               position: 'absolute',
@@ -262,7 +252,6 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
           )}
         </div>
 
-        {/* AI Vibe Tag Output */}
         {detectedMood && (
           <div style={{
             marginTop: '1rem',
@@ -275,11 +264,10 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
             fontWeight: 600,
             color: EMOTION_COLORS[detectedMood]
           }}>
-            Vibe Analysis: {VIBE_TAGS[detectedMood]}
+            Vibe Strategy: {VIBE_TAGS[detectedMood]}
           </div>
         )}
 
-        {/* Action Buttons */}
         <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.25rem' }}>
           {!snapshotUrl ? (
             <button
@@ -331,7 +319,6 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
             </button>
           )}
 
-          {/* Upload Photo Alternative */}
           <label style={{
             padding: '0.85rem 1.25rem',
             borderRadius: 'var(--radius-md)',

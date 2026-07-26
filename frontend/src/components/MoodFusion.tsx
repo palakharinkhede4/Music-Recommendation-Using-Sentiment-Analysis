@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sliders, Sparkles, Flame, Zap, Music } from 'lucide-react';
+import { Sliders } from 'lucide-react';
 import { EmotionType } from '../types';
 
 interface MoodFusionProps {
@@ -11,23 +11,19 @@ interface MoodFusionProps {
 const MOOD_PAIRS: Record<EmotionType, { secondary: EmotionType; label: string }[]> = {
   Happy: [
     { secondary: 'Neutral', label: 'Chill Sunset Vibe 🌅' },
-    { secondary: 'Surprise', label: 'Euphoric Party Mode 🎉' }
+    { secondary: 'Angry', label: 'Upbeat Calming Fusion 🍃' }
   ],
   Sad: [
-    { secondary: 'Neutral', label: 'Rainy Night Study ☔' },
-    { secondary: 'Happy', label: 'Bittersweet Nostalgia 🍂' }
+    { secondary: 'Neutral', label: 'Rainy Night Focus ☔' },
+    { secondary: 'Happy', label: 'Motivational Uplift 🌅' }
   ],
   Neutral: [
     { secondary: 'Happy', label: 'Sunny Flow State ☕' },
     { secondary: 'Sad', label: 'Deep Focus Ambient 🌌' }
   ],
   Angry: [
-    { secondary: 'Surprise', label: 'Cyber Octane Phonk ⚡' },
-    { secondary: 'Happy', label: 'High Energy Workout 💪' }
-  ],
-  Surprise: [
-    { secondary: 'Happy', label: 'Electric Future Bass 🚀' },
-    { secondary: 'Neutral', label: 'Cosmic Synthwave 🌌' }
+    { secondary: 'Neutral', label: 'Peaceful De-Stress 🌊' },
+    { secondary: 'Happy', label: 'Positive Reset 🌸' }
   ]
 };
 
@@ -58,7 +54,6 @@ export const MoodFusion: React.FC<MoodFusionProps> = ({
         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>AI Vibe Mixer</span>
       </div>
 
-      {/* Blend Preset Cards */}
       <div style={{ display: 'flex', gap: '0.6rem', marginBottom: '1rem' }}>
         {options.map(opt => {
           const isActive = opt.secondary === selectedSecondary;
@@ -89,7 +84,6 @@ export const MoodFusion: React.FC<MoodFusionProps> = ({
         })}
       </div>
 
-      {/* Fusion Ratio Slider */}
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '0.35rem' }}>
           <span style={{ fontWeight: 600, color: accentColor }}>{primaryMood} ({ratio}%)</span>

@@ -20,8 +20,7 @@ const EMOTION_COLORS: Record<EmotionType, string> = {
   Happy: '#EAB308',
   Sad: '#3B82F6',
   Neutral: '#8B5CF6',
-  Angry: '#EF4444',
-  Surprise: '#EC4899'
+  Angry: '#EF4444'
 };
 
 export const MoodJournal: React.FC<MoodJournalProps> = ({ logs, accentColor, onOpenScanner }) => {

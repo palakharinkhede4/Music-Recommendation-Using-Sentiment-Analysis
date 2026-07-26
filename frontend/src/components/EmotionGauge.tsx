@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity, Smile, Frown, Meh, Flame, Zap } from 'lucide-react';
+import { Activity, Smile, Frown, Meh, Flame } from 'lucide-react';
 import { EmotionScore, EmotionType } from '../types';
 
 interface EmotionGaugeProps {
@@ -11,11 +11,12 @@ const EMOTION_ICONS: Record<EmotionType, React.ReactNode> = {
   Happy: <Smile size={16} color="#EAB308" />,
   Sad: <Frown size={16} color="#3B82F6" />,
   Neutral: <Meh size={16} color="#8B5CF6" />,
-  Angry: <Flame size={16} color="#EF4444" />,
-  Surprise: <Zap size={16} color="#EC4899" />
+  Angry: <Flame size={16} color="#EF4444" />
 };
 
 export const EmotionGauge: React.FC<EmotionGaugeProps> = ({ scores, primaryMood }) => {
+  const filteredScores = scores.filter(s => s.emotion !== ('Surprise' as any));
+
   return (
     <div className="glass-panel" style={{ padding: '1.25rem', marginTop: '1rem' }}>
       
@@ -24,11 +25,11 @@ export const EmotionGauge: React.FC<EmotionGaugeProps> = ({ scores, primaryMood 
           <Activity size={18} color="var(--active-accent)" />
           <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: 0 }}>Sentiment Distribution</h3>
         </div>
-        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Real-Time Inference</span>
+        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>4 Core Emotions</span>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-        {scores.map(({ emotion, score, color }) => {
+        {filteredScores.map(({ emotion, score, color }) => {
           const isPrimary = emotion === primaryMood;
           const percentage = (score * 100).toFixed(1);
 

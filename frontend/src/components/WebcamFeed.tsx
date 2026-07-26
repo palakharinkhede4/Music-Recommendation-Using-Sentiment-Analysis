@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Camera, CameraOff, RefreshCw, Zap } from 'lucide-react';
 import { EmotionType, EmotionScore } from '../types';
 
@@ -11,8 +11,7 @@ const EMOTION_COLORS: Record<EmotionType, string> = {
   Happy: '#EAB308',
   Sad: '#3B82F6',
   Neutral: '#8B5CF6',
-  Angry: '#EF4444',
-  Surprise: '#EC4899'
+  Angry: '#EF4444'
 };
 
 export const WebcamFeed: React.FC<WebcamFeedProps> = ({ onEmotionDetect, accentColor }) => {
@@ -24,7 +23,6 @@ export const WebcamFeed: React.FC<WebcamFeedProps> = ({ onEmotionDetect, accentC
   const [detectedEmotion, setDetectedEmotion] = useState<EmotionType>('Neutral');
   const [confidence, setConfidence] = useState<number>(0.92);
 
-  // Initialize Camera
   useEffect(() => {
     let stream: MediaStream | null = null;
 
@@ -41,7 +39,7 @@ export const WebcamFeed: React.FC<WebcamFeedProps> = ({ onEmotionDetect, accentC
           }
         }
       } catch (err) {
-        console.warn("Webcam access error or permission denied:", err);
+        console.warn("Webcam access error:", err);
         setIsActive(false);
       }
     }
@@ -62,12 +60,11 @@ export const WebcamFeed: React.FC<WebcamFeedProps> = ({ onEmotionDetect, accentC
     };
   }, [isActive]);
 
-  // Real-Time Analysis Loop
   useEffect(() => {
     let animId: number;
     let lastTime = performance.now();
     let frameCount = 0;
-    const emotionsList: EmotionType[] = ['Happy', 'Neutral', 'Sad', 'Surprise', 'Angry'];
+    const emotionsList: EmotionType[] = ['Happy', 'Neutral', 'Sad', 'Angry'];
 
     const renderLoop = () => {
       const now = performance.now();
@@ -79,7 +76,6 @@ export const WebcamFeed: React.FC<WebcamFeedProps> = ({ onEmotionDetect, accentC
         lastTime = now;
       }
 
-      // Draw bounding box & overlay on canvas
       if (canvasRef.current && videoRef.current && isActive) {
         const ctx = canvasRef.current.getContext('2d');
         const video = videoRef.current;
@@ -90,13 +86,11 @@ export const WebcamFeed: React.FC<WebcamFeedProps> = ({ onEmotionDetect, accentC
 
           ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 
-          // Simulated Face Bounding Box Coordinates
           const boxW = 200;
           const boxH = 220;
           const boxX = (canvasRef.current.width - boxW) / 2 + Math.sin(now / 500) * 10;
           const boxY = (canvasRef.current.height - boxH) / 2 + Math.cos(now / 700) * 5;
 
-          // Draw Bounding Box Corners
           ctx.strokeStyle = accentColor;
           ctx.lineWidth = 3;
 
@@ -122,14 +116,13 @@ export const WebcamFeed: React.FC<WebcamFeedProps> = ({ onEmotionDetect, accentC
           ctx.moveTo(boxX + boxW - cornerLen, boxY + boxH); ctx.lineTo(boxX + boxW, boxY + boxH); ctx.lineTo(boxX + boxW, boxY + boxH - cornerLen);
           ctx.stroke();
 
-          // Face Landmarks Dots (Eyes, Nose, Mouth)
           ctx.fillStyle = '#10B981';
           const points = [
-            { x: boxX + 60, y: boxY + 80 },  // Left Eye
-            { x: boxX + 140, y: boxY + 80 }, // Right Eye
-            { x: boxX + 100, y: boxY + 120 },// Nose Tip
-            { x: boxX + 70, y: boxY + 160 }, // Mouth Left
-            { x: boxX + 130, y: boxY + 160 },// Mouth Right
+            { x: boxX + 60, y: boxY + 80 },
+            { x: boxX + 140, y: boxY + 80 },
+            { x: boxX + 100, y: boxY + 120 },
+            { x: boxX + 70, y: boxY + 160 },
+            { x: boxX + 130, y: boxY + 160 },
           ];
 
           points.forEach(pt => {
@@ -145,16 +138,13 @@ export const WebcamFeed: React.FC<WebcamFeedProps> = ({ onEmotionDetect, accentC
 
     animId = requestAnimationFrame(renderLoop);
 
-    // Periodically update emotion probabilities & trigger recommendation sync
     const intervalId = setInterval(() => {
-      // Periodic subtle emotion shifts
-      const randIndex = Math.floor(Math.random() * 10);
+      const randIndex = Math.floor(Math.random() * 8);
       let primary: EmotionType = 'Neutral';
 
-      if (randIndex < 4) primary = 'Happy';
-      else if (randIndex < 7) primary = 'Neutral';
-      else if (randIndex < 8) primary = 'Sad';
-      else if (randIndex < 9) primary = 'Surprise';
+      if (randIndex < 3) primary = 'Happy';
+      else if (randIndex < 6) primary = 'Neutral';
+      else if (randIndex < 7) primary = 'Sad';
       else primary = 'Angry';
 
       const scores: EmotionScore[] = emotionsList.map(e => {
@@ -179,7 +169,6 @@ export const WebcamFeed: React.FC<WebcamFeedProps> = ({ onEmotionDetect, accentC
   return (
     <div className="glass-panel" style={{ padding: '1.25rem', position: 'relative' }}>
       
-      {/* Header Bar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Zap size={18} color={accentColor} />
@@ -192,7 +181,6 @@ export const WebcamFeed: React.FC<WebcamFeedProps> = ({ onEmotionDetect, accentC
         </div>
       </div>
 
-      {/* Video Stream Container */}
       <div style={{
         position: 'relative',
         width: '100%',
@@ -225,7 +213,6 @@ export const WebcamFeed: React.FC<WebcamFeedProps> = ({ onEmotionDetect, accentC
           </div>
         )}
 
-        {/* Emotion Overlay Tag */}
         {isActive && (
           <div style={{
             position: 'absolute',
@@ -255,7 +242,6 @@ export const WebcamFeed: React.FC<WebcamFeedProps> = ({ onEmotionDetect, accentC
         )}
       </div>
 
-      {/* Camera Controls */}
       <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.85rem' }}>
         <button
           onClick={() => setIsActive(!isActive)}
@@ -281,7 +267,7 @@ export const WebcamFeed: React.FC<WebcamFeedProps> = ({ onEmotionDetect, accentC
 
         <button
           onClick={() => {
-            const emotions: EmotionType[] = ['Happy', 'Sad', 'Neutral', 'Angry', 'Surprise'];
+            const emotions: EmotionType[] = ['Happy', 'Sad', 'Neutral', 'Angry'];
             const next = emotions[Math.floor(Math.random() * emotions.length)];
             setDetectedEmotion(next);
             onEmotionDetect([

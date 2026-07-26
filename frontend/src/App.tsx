@@ -16,16 +16,14 @@ const EMOTION_COLORS: Record<EmotionType, string> = {
   Happy: '#EAB308',
   Sad: '#3B82F6',
   Neutral: '#8B5CF6',
-  Angry: '#EF4444',
-  Surprise: '#EC4899'
+  Angry: '#EF4444'
 };
 
 const DEFAULT_SCORES: EmotionScore[] = [
   { emotion: 'Happy', score: 0.15, color: EMOTION_COLORS.Happy },
   { emotion: 'Neutral', score: 0.65, color: EMOTION_COLORS.Neutral },
-  { emotion: 'Sad', score: 0.08, color: EMOTION_COLORS.Sad },
-  { emotion: 'Surprise', score: 0.07, color: EMOTION_COLORS.Surprise },
-  { emotion: 'Angry', score: 0.05, color: EMOTION_COLORS.Angry },
+  { emotion: 'Sad', score: 0.12, color: EMOTION_COLORS.Sad },
+  { emotion: 'Angry', score: 0.08, color: EMOTION_COLORS.Angry },
 ];
 
 const INITIAL_LOGS: MoodSnapshotLog[] = [
