@@ -29,7 +29,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentMood, isCamActive, accent
           </div>
           <div>
             <h1 style={{ fontSize: '1.4rem', fontWeight: 700, margin: 0, lineHeight: 1.1 }}>
-              Mood<span style={{ color: accentColor }}>Beat</span>
+              Mood<span style={{ color: accentColor }}>Beat AI</span>
             </h1>
             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>
               AI Real-Time Sentiment Music Recommender
