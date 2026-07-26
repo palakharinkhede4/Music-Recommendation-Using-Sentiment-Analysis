@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity, Smile, Frown, Meh, Flame } from 'lucide-react';
+import { Activity } from 'lucide-react';
 import { EmotionScore, EmotionType } from '../types';
 
 interface EmotionGaugeProps {
@@ -7,64 +7,59 @@ interface EmotionGaugeProps {
   primaryMood: EmotionType;
 }
 
-const EMOTION_ICONS: Record<EmotionType, React.ReactNode> = {
-  Happy: <Smile size={16} color="#EAB308" />,
-  Sad: <Frown size={16} color="#3B82F6" />,
-  Neutral: <Meh size={16} color="#8B5CF6" />,
-  Angry: <Flame size={16} color="#EF4444" />
-};
-
 export const EmotionGauge: React.FC<EmotionGaugeProps> = ({ scores, primaryMood }) => {
   const filteredScores = scores.filter(s => s.emotion !== ('Surprise' as any));
 
   return (
-    <div className="glass-panel" style={{ padding: '1.25rem', marginTop: '1rem' }}>
+    <div className="glass-panel" style={{ padding: '1rem 1.25rem', borderRadius: '20px', marginBottom: '1.25rem' }}>
       
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Activity size={18} color="var(--active-accent)" />
-          <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: 0 }}>Sentiment Distribution</h3>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', fontWeight: 600, color: '#FFF' }}>
+          <Activity size={15} color="var(--active-accent)" />
+          <span>Emotion Confidence Scores</span>
         </div>
-        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>4 Core Emotions</span>
+        <span style={{ fontSize: '0.75rem', color: '#9CA3AF' }}>4 Core Sentiments</span>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+      {/* Compact Horizontal Grid for 4 Emotions */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.65rem' }}>
         {filteredScores.map(({ emotion, score, color }) => {
           const isPrimary = emotion === primaryMood;
-          const percentage = (score * 100).toFixed(1);
+          const percentage = (score * 100).toFixed(0);
 
           return (
-            <div key={emotion} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-              
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: isPrimary ? 600 : 400, color: isPrimary ? color : 'var(--text-main)' }}>
-                  {EMOTION_ICONS[emotion]}
-                  <span>{emotion}</span>
-                </div>
-                <span style={{ fontWeight: 600, color: isPrimary ? color : 'var(--text-muted)', fontSize: '0.8rem' }}>
-                  {percentage}%
-                </span>
+            <div
+              key={emotion}
+              style={{
+                background: isPrimary ? `${color}18` : 'rgba(255,255,255,0.03)',
+                border: `1px solid ${isPrimary ? color : 'rgba(255,255,255,0.08)'}`,
+                borderRadius: '14px',
+                padding: '0.5rem 0.65rem',
+                textAlign: 'center',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <div style={{ fontSize: '0.75rem', color: isPrimary ? color : '#9CA3AF', fontWeight: isPrimary ? 700 : 500 }}>
+                {emotion}
               </div>
-
-              {/* Progress Track */}
+              <div style={{ fontSize: '1.1rem', fontWeight: 800, color: isPrimary ? color : '#FFF', margin: '0.1rem 0' }}>
+                {percentage}%
+              </div>
+              {/* Mini Bar */}
               <div style={{
                 width: '100%',
-                height: '8px',
+                height: '4px',
                 backgroundColor: 'rgba(255,255,255,0.06)',
-                borderRadius: 'var(--radius-full)',
+                borderRadius: '4px',
                 overflow: 'hidden',
-                position: 'relative'
+                marginTop: '0.2rem'
               }}>
                 <div style={{
                   width: `${percentage}%`,
                   height: '100%',
-                  backgroundColor: color,
-                  borderRadius: 'var(--radius-full)',
-                  boxShadow: isPrimary ? `0 0 12px ${color}` : 'none',
-                  transition: 'width 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
+                  backgroundColor: color
                 }} />
               </div>
-
             </div>
           );
         })}

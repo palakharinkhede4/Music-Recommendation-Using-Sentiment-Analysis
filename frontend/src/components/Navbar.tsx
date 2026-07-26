@@ -1,78 +1,124 @@
 import React from 'react';
-import { Music, Camera, Activity, Sparkles } from 'lucide-react';
+import { Music, Camera, Sparkles, Library } from 'lucide-react';
 import { EmotionType } from '../types';
 
 interface NavbarProps {
   currentMood: EmotionType;
-  isCamActive: boolean;
+  snapshotUrl: string | null;
   accentColor: string;
+  onOpenScanner: () => void;
+  onToggleLibrary: () => void;
+  isLibraryOpen: boolean;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ currentMood, isCamActive, accentColor }) => {
+export const Navbar: React.FC<NavbarProps> = ({
+  currentMood,
+  snapshotUrl,
+  accentColor,
+  onOpenScanner,
+  onToggleLibrary,
+  isLibraryOpen
+}) => {
   return (
-    <header className="glass-panel" style={{ padding: '0.85rem 1.5rem', marginBottom: '1.5rem' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    <header className="glass-panel" style={{ padding: '0.85rem 1.5rem', marginBottom: '1.5rem', borderRadius: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
         
         {/* Brand Logo & Name */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <div style={{
             background: `linear-gradient(135deg, ${accentColor}, #6366F1)`,
-            width: '42px',
-            height: '42px',
+            width: '40px',
+            height: '40px',
             borderRadius: '12px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: `0 0 15px ${accentColor}66`
+            boxShadow: `0 0 15px ${accentColor}55`
           }}>
-            <Music color="#FFF" size={24} />
+            <Music color="#FFF" size={22} />
           </div>
           <div>
-            <h1 style={{ fontSize: '1.4rem', fontWeight: 700, margin: 0, lineHeight: 1.1 }}>
+            <h1 style={{ fontSize: '1.35rem', fontWeight: 800, margin: 0, lineHeight: 1.1, color: '#FFF' }}>
               Mood<span style={{ color: accentColor }}>Beat AI</span>
             </h1>
-            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>
-              AI Real-Time Sentiment Music Recommender
+            <p style={{ fontSize: '0.75rem', color: '#9CA3AF', margin: 0 }}>
+              AI Sentiment Music Player
             </p>
           </div>
         </div>
 
-        {/* Live Status Indicators */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        {/* User Captured Selfie Avatar & Action Controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
           
-          {/* Camera Status */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            padding: '0.4rem 0.8rem',
-            background: isCamActive ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-            border: `1px solid ${isCamActive ? '#10B981' : '#EF4444'}`,
-            borderRadius: 'var(--radius-full)',
-            fontSize: '0.8rem',
-            fontWeight: 500,
-            color: isCamActive ? '#10B981' : '#EF4444'
-          }}>
-            <Camera size={14} />
-            <span>{isCamActive ? 'Vision Live' : 'Camera Off'}</span>
-          </div>
+          {/* Library Toggle Button */}
+          <button
+            onClick={onToggleLibrary}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              padding: '0.45rem 0.9rem',
+              background: isLibraryOpen ? `${accentColor}25` : 'rgba(255,255,255,0.06)',
+              border: `1px solid ${isLibraryOpen ? accentColor : 'rgba(255,255,255,0.12)'}`,
+              borderRadius: '20px',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              color: isLibraryOpen ? accentColor : '#E5E7EB',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <Library size={14} />
+            <span>{isLibraryOpen ? 'Mood Tracks Only' : 'All 12 Songs'}</span>
+          </button>
 
-          {/* Current Mood Badge */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            padding: '0.4rem 0.9rem',
-            background: `${accentColor}22`,
-            border: `1px solid ${accentColor}66`,
-            borderRadius: 'var(--radius-full)',
-            fontSize: '0.85rem',
-            fontWeight: 600,
-            color: accentColor,
-            boxShadow: `0 0 12px ${accentColor}33`
-          }}>
-            <Sparkles size={14} />
-            <span>Mood: {currentMood}</span>
+          {/* Captured Selfie Avatar + Mood Badge */}
+          <div
+            onClick={onOpenScanner}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.6rem',
+              padding: '0.3rem 0.75rem 0.3rem 0.3rem',
+              background: 'rgba(255,255,255,0.05)',
+              border: `1px solid ${accentColor}44`,
+              borderRadius: '24px',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+            title="Click to scan/retake snapshot"
+          >
+            {snapshotUrl ? (
+              <img
+                src={snapshotUrl}
+                alt="Captured Face"
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  border: `2px solid ${accentColor}`
+                }}
+              />
+            ) : (
+              <div style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                backgroundColor: `${accentColor}33`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: accentColor
+              }}>
+                <Camera size={16} />
+              </div>
+            )}
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', fontWeight: 600, color: accentColor }}>
+              <Sparkles size={12} />
+              <span>{currentMood}</span>
+            </div>
           </div>
 
         </div>

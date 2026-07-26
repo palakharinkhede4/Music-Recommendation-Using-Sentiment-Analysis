@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Camera, RefreshCw, Upload, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Camera, RefreshCw, Upload, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react';
 import { EmotionType, EmotionScore } from '../types';
 
 interface MoodScannerModalProps {
@@ -16,11 +16,11 @@ const EMOTION_COLORS: Record<EmotionType, string> = {
   Angry: '#EF4444'
 };
 
-const VIBE_TAGS: Record<EmotionType, string> = {
-  Happy: 'Upbeat Energy & Dance Vibe ✨',
-  Sad: 'Uplifting & Motivational Courage 🌅',
-  Neutral: 'Deep Focus & Ambient Zen 🎧',
-  Angry: 'Calm, Peaceful & Relaxing Serenity 🕊️'
+const VIBE_STRATEGIES: Record<EmotionType, string> = {
+  Happy: 'Upbeat & Dance Hits 💃',
+  Sad: 'Motivational & Inspiring Anthems 🚀',
+  Neutral: 'Lo-Fi Study Beats & Chillout ☕',
+  Angry: 'Calm & Peaceful Relaxation 🕊️'
 };
 
 export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
@@ -33,46 +33,61 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const [isCameraStarted, setIsCameraStarted] = useState<boolean>(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [snapshotUrl, setSnapshotUrl] = useState<string | null>(null);
   const [detectedMood, setDetectedMood] = useState<EmotionType | null>(null);
 
-  useEffect(() => {
+  // Robust multi-constraint camera initializer for PC & Mobile
+  const initCamera = async () => {
+    setCameraError(null);
     let stream: MediaStream | null = null;
 
-    async function startCam() {
+    const constraintsToTry: MediaStreamConstraints[] = [
+      { video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false },
+      { video: { facingMode: 'user' }, audio: false },
+      { video: true, audio: false }
+    ];
+
+    for (const constraint of constraintsToTry) {
       try {
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
-            audio: false
-          });
-          if (videoRef.current) {
+          stream = await navigator.mediaDevices.getUserMedia(constraint);
+          if (stream && videoRef.current) {
             videoRef.current.srcObject = stream;
-            videoRef.current.play();
+            await videoRef.current.play().catch(() => {});
             setIsCameraStarted(true);
+            return;
           }
         }
       } catch (err) {
-        console.warn("Webcam access error:", err);
-        setIsCameraStarted(false);
+        console.warn("Retrying with fallback video constraint...", err);
       }
     }
 
+    setIsCameraStarted(false);
+    setCameraError("Could not access camera. Please allow camera permissions or upload a selfie photo.");
+  };
+
+  useEffect(() => {
     if (isOpen && !snapshotUrl) {
-      startCam();
+      initCamera();
     }
 
     return () => {
-      if (stream) {
+      if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
         stream.getTracks().forEach(t => t.stop());
       }
     };
   }, [isOpen, snapshotUrl]);
 
   const captureSnapshot = () => {
-    if (!videoRef.current || !canvasRef.current) return;
+    if (!isCameraStarted) {
+      initCamera();
+      return;
+    }
 
     setIsScanning(true);
     setCountdown(3);
@@ -86,19 +101,19 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
         }
         return prev ? prev - 1 : null;
       });
-    }, 800);
+    }, 700);
   };
 
   const executeScan = () => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    if (!video || !canvas) return;
+    if (!canvas) return;
 
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 480;
+    canvas.width = video?.videoWidth || 640;
+    canvas.height = video?.videoHeight || 480;
 
     const ctx = canvas.getContext('2d');
-    if (ctx) {
+    if (ctx && video) {
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       const dataUrl = canvas.toDataURL('image/png');
       setSnapshotUrl(dataUrl);
@@ -117,7 +132,7 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
       
       setTimeout(() => {
         onScanComplete(primary, scores, dataUrl);
-      }, 1000);
+      }, 800);
     }
   };
 
@@ -151,8 +166,8 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
     <div style={{
       position: 'fixed',
       inset: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.82)',
-      backdropFilter: 'blur(12px)',
+      backgroundColor: 'rgba(0, 0, 0, 0.85)',
+      backdropFilter: 'blur(16px)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -160,53 +175,81 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
       padding: '1rem'
     }}>
       
-      <div className="glass-panel pulse-active" style={{
+      <div className="glass-panel" style={{
         width: '100%',
-        maxWidth: '540px',
-        padding: '1.75rem',
-        borderRadius: 'var(--radius-lg)',
-        border: `1px solid ${accentColor}66`,
-        background: 'linear-gradient(160deg, rgba(17, 24, 39, 0.95), rgba(10, 14, 23, 0.98))'
+        maxWidth: '500px',
+        padding: '1.5rem',
+        borderRadius: '24px',
+        border: '1px solid rgba(255, 255, 255, 0.12)',
+        background: '#121622',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)'
       }}>
         
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <Sparkles color={accentColor} size={22} />
-            <div>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>Vibe Scan & Check-In</h2>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>1-frame snapshot face scan for 4 core emotions</p>
-            </div>
+        {/* Modal Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+          <div>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0, color: '#FFF' }}>Scan Facial Emotion</h2>
+            <p style={{ fontSize: '0.8rem', color: '#9CA3AF', margin: '0.2rem 0 0 0' }}>1-Frame Camera Check-In</p>
           </div>
 
           <button
             onClick={onClose}
-            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '1.4rem', cursor: 'pointer' }}
+            style={{ background: 'none', border: 'none', color: '#9CA3AF', fontSize: '1.2rem', cursor: 'pointer' }}
           >
             ✕
           </button>
         </div>
 
+        {/* Camera Display Box */}
         <div style={{
           position: 'relative',
           width: '100%',
-          height: '300px',
-          backgroundColor: '#000',
-          borderRadius: 'var(--radius-md)',
+          height: '280px',
+          backgroundColor: '#0A0D14',
+          borderRadius: '16px',
           overflow: 'hidden',
-          border: `2px solid ${detectedMood ? EMOTION_COLORS[detectedMood] : accentColor}`,
+          border: `1px solid ${detectedMood ? EMOTION_COLORS[detectedMood] : 'rgba(255, 255, 255, 0.1)'}`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center'
         }}>
           
           {snapshotUrl ? (
-            <img src={snapshotUrl} alt="Mood Snapshot" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          ) : isCameraStarted ? (
-            <video ref={videoRef} playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src={snapshotUrl} alt="Captured Face" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           ) : (
-            <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
-              <Camera size={48} style={{ opacity: 0.4, marginBottom: '0.5rem' }} />
-              <p style={{ fontSize: '0.9rem' }}>Camera Offline</p>
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              onCanPlay={() => videoRef.current?.play()}
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                display: isCameraStarted ? 'block' : 'none'
+              }}
+            />
+          )}
+
+          {!isCameraStarted && !snapshotUrl && (
+            <div style={{ textAlign: 'center', padding: '1rem', color: '#9CA3AF' }}>
+              <AlertCircle size={40} style={{ opacity: 0.5, marginBottom: '0.5rem', color: '#EF4444' }} />
+              <p style={{ fontSize: '0.85rem', marginBottom: '0.75rem' }}>{cameraError || "Camera starting..."}</p>
+              <button
+                onClick={initCamera}
+                style={{
+                  padding: '0.4rem 1rem',
+                  borderRadius: '20px',
+                  background: 'rgba(255,255,255,0.1)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  color: '#FFF',
+                  fontSize: '0.8rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Enable Camera Access
+              </button>
             </div>
           )}
 
@@ -220,10 +263,9 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '4rem',
+              fontSize: '3.5rem',
               fontWeight: 800,
-              color: accentColor,
-              textShadow: `0 0 20px ${accentColor}`
+              color: accentColor
             }}>
               {countdown}
             </div>
@@ -232,21 +274,20 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
           {detectedMood && (
             <div style={{
               position: 'absolute',
-              bottom: '16px',
-              background: 'rgba(0, 0, 0, 0.85)',
-              backdropFilter: 'blur(10px)',
-              padding: '0.5rem 1.25rem',
-              borderRadius: 'var(--radius-full)',
+              bottom: '12px',
+              background: 'rgba(0,0,0,0.85)',
+              backdropFilter: 'blur(8px)',
+              padding: '0.4rem 1rem',
+              borderRadius: '20px',
               border: `1px solid ${EMOTION_COLORS[detectedMood]}`,
               color: EMOTION_COLORS[detectedMood],
-              fontWeight: 700,
-              fontSize: '0.95rem',
+              fontWeight: 600,
+              fontSize: '0.85rem',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem',
-              boxShadow: `0 0 20px ${EMOTION_COLORS[detectedMood]}66`
+              gap: '6px'
             }}>
-              <CheckCircle2 size={18} />
+              <CheckCircle2 size={16} />
               Detected Mood: {detectedMood}
             </div>
           )}
@@ -254,31 +295,32 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
 
         {detectedMood && (
           <div style={{
-            marginTop: '1rem',
-            padding: '0.65rem 1rem',
-            background: `${EMOTION_COLORS[detectedMood]}18`,
-            border: `1px solid ${EMOTION_COLORS[detectedMood]}44`,
-            borderRadius: 'var(--radius-md)',
+            marginTop: '0.85rem',
+            padding: '0.5rem 0.85rem',
+            background: `${EMOTION_COLORS[detectedMood]}15`,
+            border: `1px solid ${EMOTION_COLORS[detectedMood]}33`,
+            borderRadius: '12px',
             textAlign: 'center',
-            fontSize: '0.9rem',
+            fontSize: '0.85rem',
             fontWeight: 600,
             color: EMOTION_COLORS[detectedMood]
           }}>
-            Vibe Strategy: {VIBE_TAGS[detectedMood]}
+            Playlist Strategy: {VIBE_STRATEGIES[detectedMood]}
           </div>
         )}
 
-        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.25rem' }}>
+        {/* Buttons */}
+        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
           {!snapshotUrl ? (
             <button
               onClick={captureSnapshot}
               disabled={isScanning}
               style={{
                 flex: 1,
-                padding: '0.85rem',
-                borderRadius: 'var(--radius-md)',
-                background: `linear-gradient(135deg, ${accentColor}, #6366F1)`,
-                color: '#FFF',
+                padding: '0.75rem',
+                borderRadius: '12px',
+                background: accentColor,
+                color: '#000',
                 fontWeight: 700,
                 border: 'none',
                 cursor: 'pointer',
@@ -286,45 +328,46 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '0.5rem',
-                boxShadow: `0 0 20px ${accentColor}66`
+                fontSize: '0.85rem'
               }}
             >
-              <Camera size={18} />
-              {isScanning ? 'Analyzing Snapshot...' : 'Take Snapshot Frame'}
+              <Camera size={16} />
+              {isScanning ? 'Scanning...' : 'Take Snapshot'}
             </button>
           ) : (
             <button
               onClick={() => {
                 setSnapshotUrl(null);
                 setDetectedMood(null);
-                setIsCameraStarted(true);
+                initCamera();
               }}
               style={{
                 flex: 1,
-                padding: '0.85rem',
-                borderRadius: 'var(--radius-md)',
+                padding: '0.75rem',
+                borderRadius: '12px',
                 background: 'rgba(255,255,255,0.08)',
-                color: 'var(--text-main)',
+                color: '#FFF',
                 fontWeight: 600,
-                border: '1px solid var(--border-glass)',
+                border: '1px solid rgba(255,255,255,0.15)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '0.5rem'
+                gap: '0.5rem',
+                fontSize: '0.85rem'
               }}
             >
-              <RefreshCw size={16} />
-              Retake Snapshot
+              <RefreshCw size={14} />
+              Retake Frame
             </button>
           )}
 
           <label style={{
-            padding: '0.85rem 1.25rem',
-            borderRadius: 'var(--radius-md)',
-            background: 'var(--bg-glass-card)',
-            border: '1px solid var(--border-glass)',
-            color: 'var(--text-muted)',
+            padding: '0.75rem 1rem',
+            borderRadius: '12px',
+            background: 'rgba(255,255,255,0.06)',
+            border: '1px solid rgba(255,255,255,0.12)',
+            color: '#9CA3AF',
             fontWeight: 600,
             cursor: 'pointer',
             display: 'flex',

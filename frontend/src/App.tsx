@@ -10,7 +10,6 @@ import { MoodJournal, MoodSnapshotLog } from './components/MoodJournal';
 
 import { Track, EmotionType, EmotionScore } from './types';
 import { fetchRecommendations, logSentiment } from './services/api';
-import { Camera, Sparkles, Sliders } from 'lucide-react';
 
 const EMOTION_COLORS: Record<EmotionType, string> = {
   Happy: '#EAB308',
@@ -32,14 +31,7 @@ const INITIAL_LOGS: MoodSnapshotLog[] = [
     mood: 'Happy',
     timestamp: '6:15 PM',
     snapshotUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
-    vibeTag: 'Main Character Energy ✨'
-  },
-  {
-    id: 'log_02',
-    mood: 'Neutral',
-    timestamp: '2:30 PM',
-    snapshotUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80',
-    vibeTag: 'Deep Focus & Zen 🎧'
+    vibeTag: 'Upbeat Energy & Dance Vibe ✨'
   }
 ];
 
@@ -48,40 +40,42 @@ export const App: React.FC = () => {
   const [selectedFilterMood, setSelectedFilterMood] = useState<EmotionType>('Neutral');
   const [emotionScores, setEmotionScores] = useState<EmotionScore[]>(DEFAULT_SCORES);
   
-  const [tracks, setTracks] = useState<Track[]>([]);
+  const [allTracks, setAllTracks] = useState<Track[]>([]);
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   
   const [autoSync, setAutoSync] = useState<boolean>(true);
-  const [moodHistory, setMoodHistory] = useState<EmotionType[]>(['Neutral', 'Happy', 'Neutral']);
+  const [isLibraryMode, setIsLibraryMode] = useState<boolean>(false);
+  const [moodHistory, setMoodHistory] = useState<EmotionType[]>(['Neutral', 'Happy']);
   const [snapshotLogs, setSnapshotLogs] = useState<MoodSnapshotLog[]>(INITIAL_LOGS);
   
   const [isScannerOpen, setIsScannerOpen] = useState<boolean>(false);
-  const [latestSnapshotUrl, setLatestSnapshotUrl] = useState<string | null>(INITIAL_LOGS[0].snapshotUrl);
-  const [blendedVibeName, setBlendedVibeName] = useState<string | null>(null);
+  const [latestSnapshotUrl, setLatestSnapshotUrl] = useState<string | null>(null);
 
   const accentColor = EMOTION_COLORS[currentMood];
 
-  // Fetch Tracks when Mood or Filter changes
+  // Load All Tracks
   useEffect(() => {
     async function loadTracks() {
       const recs = await fetchRecommendations(currentMood);
-      setTracks(recs);
+      setAllTracks(recs);
       if (recs.length > 0) {
-        if (!currentTrack || autoSync) {
-          setCurrentTrack(recs[0]);
+        // Filter only the 3 tracks for the current mood
+        const moodMatched = recs.filter(t => t.mood === currentMood);
+        if (moodMatched.length > 0 && (!currentTrack || autoSync)) {
+          setCurrentTrack(moodMatched[0]);
         }
       }
     }
     loadTracks();
   }, [currentMood, autoSync]);
 
-  // Update Dynamic CSS Variables
+  // Update Dynamic Theme Accents
   useEffect(() => {
     document.documentElement.style.setProperty('--active-accent', accentColor);
     document.documentElement.style.setProperty('--active-accent-glow', `${accentColor}35`);
   }, [accentColor]);
 
-  // Handle Snapshot Complete from Scanner Modal
+  // Handle Scan Completion
   const handleScanComplete = (primary: EmotionType, scores: EmotionScore[], snapshotDataUrl: string) => {
     setEmotionScores(scores);
     setCurrentMood(primary);
@@ -102,167 +96,96 @@ export const App: React.FC = () => {
     logSentiment(primary, scores.find(s => s.emotion === primary)?.score || 0.9);
   };
 
+  // Next / Prev Track Navigation (respecting active filter mode)
+  const activePlaylist = isLibraryMode
+    ? allTracks
+    : allTracks.filter(t => t.mood === currentMood);
+
   const handleNextTrack = () => {
-    if (tracks.length === 0) return;
-    const currentIndex = tracks.findIndex(t => t.id === currentTrack?.id);
-    const nextIndex = (currentIndex + 1) % tracks.length;
-    setCurrentTrack(tracks[nextIndex]);
+    if (activePlaylist.length === 0) return;
+    const currentIndex = activePlaylist.findIndex(t => t.id === currentTrack?.id);
+    const nextIndex = (currentIndex + 1) % activePlaylist.length;
+    setCurrentTrack(activePlaylist[nextIndex]);
   };
 
   const handlePrevTrack = () => {
-    if (tracks.length === 0) return;
-    const currentIndex = tracks.findIndex(t => t.id === currentTrack?.id);
-    const prevIndex = (currentIndex - 1 + tracks.length) % tracks.length;
-    setCurrentTrack(tracks[prevIndex]);
+    if (activePlaylist.length === 0) return;
+    const currentIndex = activePlaylist.findIndex(t => t.id === currentTrack?.id);
+    const prevIndex = (currentIndex - 1 + activePlaylist.length) % activePlaylist.length;
+    setCurrentTrack(activePlaylist[prevIndex]);
   };
 
   return (
-    <div className="app-container">
+    <div className="app-container" style={{ maxWidth: '1100px' }}>
       
-      {/* Top Navbar */}
+      {/* Top Navbar with Captured Selfie Avatar */}
       <Navbar
         currentMood={currentMood}
-        isCamActive={false}
-        accentColor={accentColor}
-      />
-
-      {/* Snapshot Hero Scanner Card */}
-      <div className="glass-panel" style={{
-        padding: '1.5rem',
-        marginBottom: '1.5rem',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '1.25rem',
-        background: `linear-gradient(135deg, rgba(17, 24, 39, 0.9), ${accentColor}18)`,
-        borderColor: `${accentColor}44`
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-          {/* Latest Snapshot Circle */}
-          <div style={{
-            position: 'relative',
-            width: '68px',
-            height: '68px',
-            borderRadius: '50%',
-            overflow: 'hidden',
-            border: `3px solid ${accentColor}`,
-            boxShadow: `0 0 20px ${accentColor}66`,
-            flexShrink: 0
-          }}>
-            {latestSnapshotUrl ? (
-              <img src={latestSnapshotUrl} alt="Check-in Face" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            ) : (
-              <div style={{ width: '100%', height: '100%', backgroundColor: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Camera size={24} color={accentColor} />
-              </div>
-            )}
-          </div>
-
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                CURRENT SESSION MOOD
-              </span>
-              {blendedVibeName && (
-                <span style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem', borderRadius: 'var(--radius-full)', background: `${accentColor}33`, color: accentColor, fontWeight: 600 }}>
-                  {blendedVibeName}
-                </span>
-              )}
-            </div>
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 800, margin: 0, lineHeight: 1.2 }}>
-              Feeling <span style={{ color: accentColor }}>{currentMood}</span> Today
-            </h2>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0.2rem 0 0 0' }}>
-              1-Frame Snapshot Check-in • YouTube Music Playlist Matched
-            </p>
-          </div>
-        </div>
-
-        {/* Scan Vibe Trigger Button */}
-        <button
-          onClick={() => setIsScannerOpen(true)}
-          style={{
-            padding: '0.85rem 1.6rem',
-            borderRadius: 'var(--radius-full)',
-            background: `linear-gradient(135deg, ${accentColor}, #6366F1)`,
-            color: '#FFF',
-            border: 'none',
-            fontWeight: 700,
-            fontSize: '0.9rem',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.6rem',
-            boxShadow: `0 0 24px ${accentColor}77`,
-            transition: 'transform 0.15s ease'
-          }}
-        >
-          <Camera size={18} />
-          <span>Scan Mood Snapshot</span>
-        </button>
-      </div>
-
-      {/* Main Grid Layout */}
-      <div className="main-grid">
-        
-        {/* LEFT COLUMN */}
-        <div>
-          <EmotionGauge
-            scores={emotionScores}
-            primaryMood={currentMood}
-          />
-          <MoodFusion
-            primaryMood={currentMood}
-            accentColor={accentColor}
-            onBlendChange={(label, sec, ratio) => {
-              setBlendedVibeName(label);
-            }}
-          />
-        </div>
-
-        {/* RIGHT COLUMN */}
-        <div>
-          <MusicPlayer
-            track={currentTrack}
-            currentMood={currentMood}
-            accentColor={accentColor}
-            onNext={handleNextTrack}
-            onPrev={handlePrevTrack}
-            autoSync={autoSync}
-            onToggleAutoSync={() => setAutoSync(!autoSync)}
-          />
-
-          <div style={{ marginTop: '1.25rem' }}>
-            <Playlist
-              tracks={tracks}
-              currentTrackId={currentTrack?.id || null}
-              selectedMood={selectedFilterMood}
-              accentColor={accentColor}
-              onSelectTrack={(t) => setCurrentTrack(t)}
-              onFilterMood={(m) => {
-                setSelectedFilterMood(m);
-                fetchRecommendations(m).then(t => setTracks(t));
-              }}
-            />
-          </div>
-        </div>
-
-      </div>
-
-      {/* Mood Check-in History Gallery & Analytics */}
-      <MoodJournal
-        logs={snapshotLogs}
+        snapshotUrl={latestSnapshotUrl}
         accentColor={accentColor}
         onOpenScanner={() => setIsScannerOpen(true)}
+        onToggleLibrary={() => setIsLibraryMode(!isLibraryMode)}
+        isLibraryOpen={isLibraryMode}
       />
+
+      {/* Compact Emotion Confidence Gauge */}
+      <EmotionGauge
+        scores={emotionScores}
+        primaryMood={currentMood}
+      />
+
+      {/* CORE MUSIC PLAYER EXPERIENCE */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.25rem' }}>
+        
+        {/* Sleek Hero Music Player */}
+        <MusicPlayer
+          track={currentTrack}
+          currentMood={currentMood}
+          accentColor={accentColor}
+          onNext={handleNextTrack}
+          onPrev={handlePrevTrack}
+          autoSync={autoSync}
+          onToggleAutoSync={() => setAutoSync(!autoSync)}
+        />
+
+        {/* 3-Song Mood Playlist */}
+        <Playlist
+          tracks={allTracks}
+          currentTrackId={currentTrack?.id || null}
+          selectedMood={selectedFilterMood}
+          accentColor={accentColor}
+          isLibraryMode={isLibraryMode}
+          onSelectTrack={(t) => setCurrentTrack(t)}
+          onFilterMood={(m) => {
+            setSelectedFilterMood(m);
+            fetchRecommendations(m).then(t => setAllTracks(t));
+          }}
+          onToggleLibrary={() => setIsLibraryMode(!isLibraryMode)}
+        />
+
+      </div>
+
+      {/* Secondary Features (Mood Fusion & Analytics) */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', marginTop: '1.25rem' }}>
+        <MoodFusion
+          primaryMood={currentMood}
+          accentColor={accentColor}
+          onBlendChange={(label, sec, ratio) => {}}
+        />
+
+        <MoodJournal
+          logs={snapshotLogs}
+          accentColor={accentColor}
+          onOpenScanner={() => setIsScannerOpen(true)}
+        />
+      </div>
 
       <MoodAnalytics
         history={moodHistory}
         accentColor={accentColor}
       />
 
-      {/* Single Frame Snapshot Camera Modal */}
+      {/* Camera Scan Modal */}
       <MoodScannerModal
         isOpen={isScannerOpen}
         onClose={() => setIsScannerOpen(false)}
