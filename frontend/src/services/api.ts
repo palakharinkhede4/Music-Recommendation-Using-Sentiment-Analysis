@@ -1,0 +1,183 @@
+import { Track, EmotionType } from '../types';
+
+const API_BASE = 'http://127.0.0.1:8000/api';
+
+const MOCK_TRACKS: Track[] = [
+  {
+    id: "yt_01",
+    title: "Happy",
+    artist: "Pharrell Williams",
+    album: "Despicable Me 2",
+    mood: "Happy",
+    genre: "Pop / Soul",
+    duration: 233,
+    youtubeId: "ZbZSe6N_BXs",
+    youtubeUrl: "https://music.youtube.com/watch?v=ZbZSe6N_BXs",
+    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+    coverUrl: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&auto=format&fit=crop&q=80",
+    themeColor: "#EAB308",
+    bpm: 160
+  },
+  {
+    id: "yt_02",
+    title: "Can't Stop the Feeling!",
+    artist: "Justin Timberlake",
+    album: "Trolls OST",
+    mood: "Happy",
+    genre: "Disco Pop",
+    duration: 236,
+    youtubeId: "ru0K8uYEZWw",
+    youtubeUrl: "https://music.youtube.com/watch?v=ru0K8uYEZWw",
+    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+    coverUrl: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&auto=format&fit=crop&q=80",
+    themeColor: "#F59E0B",
+    bpm: 113
+  },
+  {
+    id: "yt_03",
+    title: "Someone Like You",
+    artist: "Adele",
+    album: "21",
+    mood: "Sad",
+    genre: "Piano Ballad",
+    duration: 285,
+    youtubeId: "hLQl3WQQoQ0",
+    youtubeUrl: "https://music.youtube.com/watch?v=hLQl3WQQoQ0",
+    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+    coverUrl: "https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=500&auto=format&fit=crop&q=80",
+    themeColor: "#3B82F6",
+    bpm: 67
+  },
+  {
+    id: "yt_04",
+    title: "Fix You",
+    artist: "Coldplay",
+    album: "X&Y",
+    mood: "Sad",
+    genre: "Alternative Rock",
+    duration: 295,
+    youtubeId: "k4V3Mo61fJM",
+    youtubeUrl: "https://music.youtube.com/watch?v=k4V3Mo61fJM",
+    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
+    coverUrl: "https://images.unsplash.com/photo-1499346030926-9a72daac6ce6?w=500&auto=format&fit=crop&q=80",
+    themeColor: "#60A5FA",
+    bpm: 74
+  },
+  {
+    id: "yt_05",
+    title: "Weightless",
+    artist: "Marconi Union",
+    album: "Ambient 1",
+    mood: "Neutral",
+    genre: "Ambient Relaxation",
+    duration: 480,
+    youtubeId: "UfcAVejslrU",
+    youtubeUrl: "https://music.youtube.com/watch?v=UfcAVejslrU",
+    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3",
+    coverUrl: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=500&auto=format&fit=crop&q=80",
+    themeColor: "#8B5CF6",
+    bpm: 60
+  },
+  {
+    id: "yt_06",
+    title: "Lofi Hip Hop Radio - Beats to Relax/Study to",
+    artist: "Lofi Girl",
+    album: "ChilledCow",
+    mood: "Neutral",
+    genre: "Lo-Fi Beats",
+    duration: 300,
+    youtubeId: "jfKfPfyJRdk",
+    youtubeUrl: "https://music.youtube.com/watch?v=jfKfPfyJRdk",
+    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3",
+    coverUrl: "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=500&auto=format&fit=crop&q=80",
+    themeColor: "#A78BFA",
+    bpm: 80
+  },
+  {
+    id: "yt_07",
+    title: "Break Stuff",
+    artist: "Limp Bizkit",
+    album: "Significant Other",
+    mood: "Angry",
+    genre: "Nu Metal",
+    duration: 166,
+    youtubeId: "ZpUYjpKg9KY",
+    youtubeUrl: "https://music.youtube.com/watch?v=ZpUYjpKg9KY",
+    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3",
+    coverUrl: "https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?w=500&auto=format&fit=crop&q=80",
+    themeColor: "#EF4444",
+    bpm: 110
+  },
+  {
+    id: "yt_08",
+    title: "METAMORPHOSIS",
+    artist: "INTERWORLD",
+    album: "Drift Phonk",
+    mood: "Angry",
+    genre: "Phonk / Aggressive",
+    duration: 143,
+    youtubeId: "R0f_4pU5tWc",
+    youtubeUrl: "https://music.youtube.com/watch?v=R0f_4pU5tWc",
+    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3",
+    coverUrl: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=500&auto=format&fit=crop&q=80",
+    themeColor: "#DC2626",
+    bpm: 140
+  },
+  {
+    id: "yt_09",
+    title: "Blinding Lights",
+    artist: "The Weeknd",
+    album: "After Hours",
+    mood: "Surprise",
+    genre: "Synthwave / Pop",
+    duration: 200,
+    youtubeId: "4NRXx6U8ABQ",
+    youtubeUrl: "https://music.youtube.com/watch?v=4NRXx6U8ABQ",
+    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3",
+    coverUrl: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80",
+    themeColor: "#EC4899",
+    bpm: 171
+  },
+  {
+    id: "yt_10",
+    title: "STARWALKIN'",
+    artist: "Lil Nas X",
+    album: "League of Legends Anthem",
+    mood: "Surprise",
+    genre: "Electro Pop",
+    duration: 210,
+    youtubeId: "HYsz1hP0BFo",
+    youtubeUrl: "https://music.youtube.com/watch?v=HYsz1hP0BFo",
+    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3",
+    coverUrl: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=500&auto=format&fit=crop&q=80",
+    themeColor: "#F472B6",
+    bpm: 142
+  }
+];
+
+export async function fetchRecommendations(mood: EmotionType): Promise<Track[]> {
+  try {
+    const res = await fetch(`${API_BASE}/tracks/recommendations?mood=${mood}`);
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (err) {
+    console.warn("Backend API offline; using local YouTube Music track dataset.", err);
+  }
+
+  const matched = MOCK_TRACKS.filter(t => t.mood === mood);
+  const rest = MOCK_TRACKS.filter(t => t.mood !== mood);
+  return [...matched, ...rest];
+}
+
+export async function logSentiment(mood: EmotionType, confidence: number): Promise<void> {
+  try {
+    await fetch(`${API_BASE}/sentiment/log`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mood, confidence })
+    });
+  } catch (e) {
+    // Silent fallback
+  }
+}
