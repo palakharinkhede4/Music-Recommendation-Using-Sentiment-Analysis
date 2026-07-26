@@ -47,17 +47,17 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
 
-        {/* User Captured Selfie Avatar & Action Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+        {/* Top Right Action Controls: All Songs, Scan Vibe, Mini Avatar */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           
-          {/* Library Toggle Button */}
+          {/* Library Mode Toggle Button */}
           <button
             onClick={onToggleLibrary}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: '0.4rem',
-              padding: '0.45rem 0.9rem',
+              padding: '0.45rem 0.85rem',
               background: isLibraryOpen ? `${accentColor}25` : 'rgba(255,255,255,0.06)',
               border: `1px solid ${isLibraryOpen ? accentColor : 'rgba(255,255,255,0.12)'}`,
               borderRadius: '20px',
@@ -69,7 +69,30 @@ export const Navbar: React.FC<NavbarProps> = ({
             }}
           >
             <Library size={14} />
-            <span>{isLibraryOpen ? 'Mood Tracks Only' : 'All 12 Songs'}</span>
+            <span>{isLibraryOpen ? 'Mood Tracks' : 'All 12 Songs'}</span>
+          </button>
+
+          {/* Capture New Snapshot Button */}
+          <button
+            onClick={onOpenScanner}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              padding: '0.45rem 0.95rem',
+              background: accentColor,
+              border: 'none',
+              borderRadius: '20px',
+              fontSize: '0.8rem',
+              fontWeight: 700,
+              color: '#000',
+              cursor: 'pointer',
+              boxShadow: `0 4px 14px ${accentColor}44`,
+              transition: 'transform 0.15s ease'
+            }}
+          >
+            <Camera size={15} />
+            <span>Scan Vibe</span>
           </button>
 
           {/* Captured Selfie Avatar + Mood Badge */}
@@ -78,15 +101,14 @@ export const Navbar: React.FC<NavbarProps> = ({
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '0.6rem',
-              padding: '0.3rem 0.75rem 0.3rem 0.3rem',
+              gap: '0.5rem',
+              padding: '0.25rem 0.75rem 0.25rem 0.25rem',
               background: 'rgba(255,255,255,0.05)',
               border: `1px solid ${accentColor}44`,
               borderRadius: '24px',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
+              cursor: 'pointer'
             }}
-            title="Click to scan/retake snapshot"
+            title="Click to view/retake snapshot"
           >
             {snapshotUrl ? (
               <img
@@ -115,7 +137,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             )}
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', fontWeight: 600, color: accentColor }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem', fontWeight: 600, color: accentColor }}>
               <Sparkles size={12} />
               <span>{currentMood}</span>
             </div>

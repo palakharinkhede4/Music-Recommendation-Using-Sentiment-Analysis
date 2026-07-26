@@ -1,5 +1,5 @@
 import React from 'react';
-import { Camera, Calendar, Sparkles } from 'lucide-react';
+import { Camera, Calendar } from 'lucide-react';
 import { EmotionType } from '../types';
 
 export interface MoodSnapshotLog {
@@ -24,13 +24,15 @@ const EMOTION_COLORS: Record<EmotionType, string> = {
 };
 
 export const MoodJournal: React.FC<MoodJournalProps> = ({ logs, accentColor, onOpenScanner }) => {
+  if (logs.length === 0) return null;
+
   return (
-    <div className="glass-panel" style={{ padding: '1.25rem', marginTop: '1.25rem' }}>
+    <div className="glass-panel" style={{ padding: '1.25rem', marginTop: '1.25rem', borderRadius: '20px' }}>
       
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Calendar size={18} color={accentColor} />
-          <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: 0 }}>Vibe Snapshot History</h3>
+          <Calendar size={17} color={accentColor} />
+          <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: 0, color: '#FFF' }}>Session Vibe Snapshots</h3>
         </div>
 
         <button
@@ -40,7 +42,7 @@ export const MoodJournal: React.FC<MoodJournalProps> = ({ logs, accentColor, onO
             border: `1px solid ${accentColor}66`,
             color: accentColor,
             padding: '0.35rem 0.85rem',
-            borderRadius: 'var(--radius-full)',
+            borderRadius: '20px',
             fontSize: '0.75rem',
             fontWeight: 700,
             cursor: 'pointer',
@@ -49,13 +51,12 @@ export const MoodJournal: React.FC<MoodJournalProps> = ({ logs, accentColor, onO
             gap: '0.4rem'
           }}
         >
-          <Camera size={14} />
-          Scan New Snapshot
+          <Camera size={13} />
+          <span>New Snapshot</span>
         </button>
       </div>
 
-      {/* Snapshots Gallery */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '0.75rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '0.75rem' }}>
         {logs.map(log => {
           const col = EMOTION_COLORS[log.mood];
 
@@ -65,16 +66,15 @@ export const MoodJournal: React.FC<MoodJournalProps> = ({ logs, accentColor, onO
               className="glass-card"
               style={{
                 padding: '0.5rem',
-                borderRadius: 'var(--radius-md)',
+                borderRadius: '14px',
                 border: `1px solid ${col}44`,
                 background: `${col}10`
               }}
             >
-              {/* Snapshot Thumbnail */}
               <div style={{
                 width: '100%',
-                height: '95px',
-                borderRadius: 'var(--radius-sm)',
+                height: '90px',
+                borderRadius: '10px',
                 overflow: 'hidden',
                 marginBottom: '0.4rem',
                 border: `1px solid ${col}66`
@@ -82,12 +82,11 @@ export const MoodJournal: React.FC<MoodJournalProps> = ({ logs, accentColor, onO
                 <img src={log.snapshotUrl} alt={log.mood} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
 
-              {/* Meta */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: '0.75rem', fontWeight: 700, color: col }}>
                   {log.mood}
                 </span>
-                <span style={{ fontSize: '0.65rem', color: 'var(--text-dim)' }}>
+                <span style={{ fontSize: '0.65rem', color: '#9CA3AF' }}>
                   {log.timestamp}
                 </span>
               </div>

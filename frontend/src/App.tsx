@@ -5,7 +5,6 @@ import { MusicPlayer } from './components/MusicPlayer';
 import { Playlist } from './components/Playlist';
 import { MoodAnalytics } from './components/MoodAnalytics';
 import { MoodScannerModal } from './components/MoodScannerModal';
-import { MoodFusion } from './components/MoodFusion';
 import { MoodJournal, MoodSnapshotLog } from './components/MoodJournal';
 
 import { Track, EmotionType, EmotionScore } from './types';
@@ -25,16 +24,6 @@ const DEFAULT_SCORES: EmotionScore[] = [
   { emotion: 'Angry', score: 0.08, color: EMOTION_COLORS.Angry },
 ];
 
-const INITIAL_LOGS: MoodSnapshotLog[] = [
-  {
-    id: 'log_01',
-    mood: 'Happy',
-    timestamp: '6:15 PM',
-    snapshotUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
-    vibeTag: 'Upbeat Energy & Dance Vibe ✨'
-  }
-];
-
 export const App: React.FC = () => {
   const [currentMood, setCurrentMood] = useState<EmotionType>('Neutral');
   const [selectedFilterMood, setSelectedFilterMood] = useState<EmotionType>('Neutral');
@@ -45,21 +34,22 @@ export const App: React.FC = () => {
   
   const [autoSync, setAutoSync] = useState<boolean>(true);
   const [isLibraryMode, setIsLibraryMode] = useState<boolean>(false);
-  const [moodHistory, setMoodHistory] = useState<EmotionType[]>(['Neutral', 'Happy']);
-  const [snapshotLogs, setSnapshotLogs] = useState<MoodSnapshotLog[]>(INITIAL_LOGS);
+  
+  // Flushed session history (cleared on every fresh browser load)
+  const [moodHistory, setMoodHistory] = useState<EmotionType[]>(['Neutral']);
+  const [snapshotLogs, setSnapshotLogs] = useState<MoodSnapshotLog[]>([]);
   
   const [isScannerOpen, setIsScannerOpen] = useState<boolean>(false);
   const [latestSnapshotUrl, setLatestSnapshotUrl] = useState<string | null>(null);
 
   const accentColor = EMOTION_COLORS[currentMood];
 
-  // Load All Tracks
+  // Load Tracks
   useEffect(() => {
     async function loadTracks() {
       const recs = await fetchRecommendations(currentMood);
       setAllTracks(recs);
       if (recs.length > 0) {
-        // Filter only the 3 tracks for the current mood
         const moodMatched = recs.filter(t => t.mood === currentMood);
         if (moodMatched.length > 0 && (!currentTrack || autoSync)) {
           setCurrentTrack(moodMatched[0]);
@@ -75,7 +65,7 @@ export const App: React.FC = () => {
     document.documentElement.style.setProperty('--active-accent-glow', `${accentColor}35`);
   }, [accentColor]);
 
-  // Handle Scan Completion
+  // Handle Camera Snapshot Scan Complete
   const handleScanComplete = (primary: EmotionType, scores: EmotionScore[], snapshotDataUrl: string) => {
     setEmotionScores(scores);
     setCurrentMood(primary);
@@ -89,14 +79,14 @@ export const App: React.FC = () => {
       mood: primary,
       timestamp: nowStr,
       snapshotUrl: snapshotDataUrl,
-      vibeTag: `${primary} Vibe Check`
+      vibeTag: `${primary} Check-in`
     };
 
     setSnapshotLogs(prev => [newLog, ...prev]);
     logSentiment(primary, scores.find(s => s.emotion === primary)?.score || 0.9);
   };
 
-  // Next / Prev Track Navigation (respecting active filter mode)
+  // Playlist track navigation
   const activePlaylist = isLibraryMode
     ? allTracks
     : allTracks.filter(t => t.mood === currentMood);
@@ -116,9 +106,9 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="app-container" style={{ maxWidth: '1100px' }}>
+    <div className="app-container" style={{ maxWidth: '1050px' }}>
       
-      {/* Top Navbar with Captured Selfie Avatar */}
+      {/* Top Navbar with Scan Vibe button & captured avatar */}
       <Navbar
         currentMood={currentMood}
         snapshotUrl={latestSnapshotUrl}
@@ -128,16 +118,15 @@ export const App: React.FC = () => {
         isLibraryOpen={isLibraryMode}
       />
 
-      {/* Compact Emotion Confidence Gauge */}
+      {/* Compact Emotion Confidence Widget */}
       <EmotionGauge
         scores={emotionScores}
         primaryMood={currentMood}
       />
 
-      {/* CORE MUSIC PLAYER EXPERIENCE */}
+      {/* Hero Music Experience */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.25rem' }}>
         
-        {/* Sleek Hero Music Player */}
         <MusicPlayer
           track={currentTrack}
           currentMood={currentMood}
@@ -148,7 +137,6 @@ export const App: React.FC = () => {
           onToggleAutoSync={() => setAutoSync(!autoSync)}
         />
 
-        {/* 3-Song Mood Playlist */}
         <Playlist
           tracks={allTracks}
           currentTrackId={currentTrack?.id || null}
@@ -165,20 +153,12 @@ export const App: React.FC = () => {
 
       </div>
 
-      {/* Secondary Features (Mood Fusion & Analytics) */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', marginTop: '1.25rem' }}>
-        <MoodFusion
-          primaryMood={currentMood}
-          accentColor={accentColor}
-          onBlendChange={(label, sec, ratio) => {}}
-        />
-
-        <MoodJournal
-          logs={snapshotLogs}
-          accentColor={accentColor}
-          onOpenScanner={() => setIsScannerOpen(true)}
-        />
-      </div>
+      {/* Session Snapshots & Analytics */}
+      <MoodJournal
+        logs={snapshotLogs}
+        accentColor={accentColor}
+        onOpenScanner={() => setIsScannerOpen(true)}
+      />
 
       <MoodAnalytics
         history={moodHistory}
