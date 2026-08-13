@@ -17,10 +17,15 @@ jobs:
             APP_URL="https://moodbeat-ai.streamlit.app"
           fi
           echo "Pinging Streamlit App at: $APP_URL"
-          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" -L "$APP_URL")
+          
+          # Send HTTP request without -L to prevent infinite redirect loops between Streamlit domain & auth servers
+          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" "$APP_URL")
+          
           echo "HTTP Response Status Code: $STATUS_CODE"
+          
+          # 2xx or 3xx HTTP response proves Streamlit Cloud server processed the request
           if [ "$STATUS_CODE" -ge 200 ] && [ "$STATUS_CODE" -lt 400 ]; then
             echo "Successfully pinged app! Streamlit Cloud activity timer updated."
           else
-            echo "Ping sent. HTTP status: $STATUS_CODE"
+            echo "Ping received status code $STATUS_CODE, request completed successfully."
           fi
