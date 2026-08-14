@@ -11,10 +11,10 @@ import { Track, EmotionType, EmotionScore } from './types';
 import { fetchRecommendations, logSentiment } from './services/api';
 
 const EMOTION_COLORS: Record<EmotionType, string> = {
-  Happy: '#EAB308',
+  Happy: '#F59E0B',
   Sad: '#3B82F6',
   Neutral: '#8B5CF6',
-  Angry: '#EF4444'
+  Angry: '#F43F5E'
 };
 
 const DEFAULT_SCORES: EmotionScore[] = [
@@ -35,7 +35,7 @@ export const App: React.FC = () => {
   const [autoSync, setAutoSync] = useState<boolean>(true);
   const [isLibraryMode, setIsLibraryMode] = useState<boolean>(false);
   
-  // Flushed session history (cleared on every fresh browser load)
+  // Session history (fresh per browser session)
   const [moodHistory, setMoodHistory] = useState<EmotionType[]>(['Neutral']);
   const [snapshotLogs, setSnapshotLogs] = useState<MoodSnapshotLog[]>([]);
   
@@ -59,10 +59,10 @@ export const App: React.FC = () => {
     loadTracks();
   }, [currentMood, autoSync]);
 
-  // Update Dynamic Theme Accents
+  // Update Dynamic Theme Accents in CSS variables
   useEffect(() => {
     document.documentElement.style.setProperty('--active-accent', accentColor);
-    document.documentElement.style.setProperty('--active-accent-glow', `${accentColor}35`);
+    document.documentElement.style.setProperty('--active-accent-glow', `${accentColor}30`);
   }, [accentColor]);
 
   // Handle Camera Snapshot Scan Complete
@@ -79,7 +79,7 @@ export const App: React.FC = () => {
       mood: primary,
       timestamp: nowStr,
       snapshotUrl: snapshotDataUrl,
-      vibeTag: `${primary} Check-in`
+      vibeTag: `${primary} Analysis`
     };
 
     setSnapshotLogs(prev => [newLog, ...prev]);
@@ -106,9 +106,9 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="app-container" style={{ maxWidth: '1050px' }}>
+    <div className="app-container" style={{ maxWidth: '1080px' }}>
       
-      {/* Top Navbar with Scan Vibe button & captured avatar */}
+      {/* Top Navbar with Scan Sentiment button & user avatar */}
       <Navbar
         currentMood={currentMood}
         snapshotUrl={latestSnapshotUrl}
@@ -118,13 +118,13 @@ export const App: React.FC = () => {
         isLibraryOpen={isLibraryMode}
       />
 
-      {/* Compact Emotion Confidence Widget */}
+      {/* Emotion Confidence Metrics Widget */}
       <EmotionGauge
         scores={emotionScores}
         primaryMood={currentMood}
       />
 
-      {/* Hero Music Experience */}
+      {/* Hero Music Player & Playlist Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.25rem' }}>
         
         <MusicPlayer
@@ -153,7 +153,7 @@ export const App: React.FC = () => {
 
       </div>
 
-      {/* Session Snapshots & Analytics */}
+      {/* Session Snapshots & Sentiment Analytics */}
       <MoodJournal
         logs={snapshotLogs}
         accentColor={accentColor}

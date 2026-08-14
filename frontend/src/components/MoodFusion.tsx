@@ -10,20 +10,20 @@ interface MoodFusionProps {
 
 const MOOD_PAIRS: Record<EmotionType, { secondary: EmotionType; label: string }[]> = {
   Happy: [
-    { secondary: 'Neutral', label: 'Chill Sunset Vibe 🌅' },
-    { secondary: 'Angry', label: 'Upbeat Calming Fusion 🍃' }
+    { secondary: 'Neutral', label: 'Balanced Sunset Flow' },
+    { secondary: 'Angry', label: 'High-Energy Grounding' }
   ],
   Sad: [
-    { secondary: 'Neutral', label: 'Rainy Night Focus ☔' },
-    { secondary: 'Happy', label: 'Motivational Uplift 🌅' }
+    { secondary: 'Neutral', label: 'Reflective Ambient' },
+    { secondary: 'Happy', label: 'Resilient Uplift' }
   ],
   Neutral: [
-    { secondary: 'Happy', label: 'Sunny Flow State ☕' },
-    { secondary: 'Sad', label: 'Deep Focus Ambient 🌌' }
+    { secondary: 'Happy', label: 'Energized Focus' },
+    { secondary: 'Sad', label: 'Deep Focus Ambient' }
   ],
   Angry: [
-    { secondary: 'Neutral', label: 'Peaceful De-Stress 🌊' },
-    { secondary: 'Happy', label: 'Positive Reset 🌸' }
+    { secondary: 'Neutral', label: 'Centering Downtempo' },
+    { secondary: 'Happy', label: 'Positive Elevation' }
   ]
 };
 
@@ -44,17 +44,19 @@ export const MoodFusion: React.FC<MoodFusionProps> = ({
   };
 
   return (
-    <div className="glass-panel" style={{ padding: '1.25rem', marginTop: '1.25rem' }}>
+    <div className="glass-panel" style={{ padding: '1.25rem', marginTop: '1.25rem', borderRadius: '18px' }}>
       
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Sliders size={18} color={accentColor} />
-          <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: 0 }}>Mood Fusion Blend</h3>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.9rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+          <Sliders size={16} color={accentColor} />
+          <h3 style={{ fontSize: '0.95rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
+            Sentiment Blending Engine
+          </h3>
         </div>
-        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>AI Vibe Mixer</span>
+        <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>Dual Sentiment Matrix</span>
       </div>
 
-      <div style={{ display: 'flex', gap: '0.6rem', marginBottom: '1rem' }}>
+      <div style={{ display: 'flex', gap: '0.55rem', marginBottom: '0.9rem' }}>
         {options.map(opt => {
           const isActive = opt.secondary === selectedSecondary;
           return (
@@ -66,16 +68,16 @@ export const MoodFusion: React.FC<MoodFusionProps> = ({
               }}
               style={{
                 flex: 1,
-                padding: '0.6rem',
-                borderRadius: 'var(--radius-md)',
-                border: `1px solid ${isActive ? accentColor : 'var(--border-glass)'}`,
-                background: isActive ? `${accentColor}22` : 'var(--bg-glass-card)',
-                color: isActive ? accentColor : 'var(--text-main)',
-                fontSize: '0.8rem',
-                fontWeight: isActive ? 700 : 400,
+                padding: '0.55rem',
+                borderRadius: '10px',
+                border: `1px solid ${isActive ? accentColor : 'rgba(255, 255, 255, 0.08)'}`,
+                background: isActive ? `${accentColor}1A` : 'rgba(255, 255, 255, 0.03)',
+                color: isActive ? accentColor : 'var(--text-primary)',
+                fontSize: '0.78rem',
+                fontWeight: isActive ? 700 : 500,
                 cursor: 'pointer',
                 textAlign: 'center',
-                transition: 'all 0.2s ease'
+                transition: 'all 0.15s ease'
               }}
             >
               {opt.label}
@@ -85,9 +87,9 @@ export const MoodFusion: React.FC<MoodFusionProps> = ({
       </div>
 
       <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '0.35rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem', marginBottom: '0.35rem' }}>
           <span style={{ fontWeight: 600, color: accentColor }}>{primaryMood} ({ratio}%)</span>
-          <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>{selectedSecondary} ({100 - ratio}%)</span>
+          <span style={{ fontWeight: 600, color: 'var(--text-tertiary)' }}>{selectedSecondary} ({100 - ratio}%)</span>
         </div>
         <input
           type="range"

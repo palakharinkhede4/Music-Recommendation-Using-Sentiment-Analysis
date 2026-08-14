@@ -1,70 +1,94 @@
-# 🎵 MoodBeat AI - Music Recommendation Using Sentiment Analysis
+# MoodBeat - Sentiment-Aware Music Recommendation System
 
-> A modern, 100% free web application that performs **Facial Sentiment Analysis** via camera snapshot and recommends custom MP3 music tracks based on 4 core emotions (`Happy`, `Sad`, `Neutral`, `Angry`).
-
----
-
-## 🚀 Streamlit Community Cloud Deployment (100% Free Forever)
-
-**No 30-day limits or paid subscriptions required!** Streamlit Community Cloud hosts your Python web app for free indefinitely.
-
-### **How to Deploy in 3 Clicks**:
-1. Push this repository to GitHub.
-2. Go to **[share.streamlit.io](https://share.streamlit.io)** and sign in with GitHub.
-3. Click **New App**, select this repository, and set:
-   - **Main file path**: `app.py`
-4. Click **Deploy!** Your app will be live at `https://moodbeat-ai.streamlit.app`.
+A modern, high-performance web application that performs real-time **Computer Vision Facial Sentiment Analysis** and dynamically curates customized music tracks matching user emotions (`Happy`, `Sad`, `Neutral`, `Angry`).
 
 ---
 
-## 🧠 Train Your Own High-Accuracy Model on Remote CPU/GPU
+## Deployment to Vercel (Recommended)
 
-If you want to train a custom deep learning PyTorch model for **90%+ classification accuracy**:
+MoodBeat is fully optimized for **Vercel** with instant global CDN distribution, zero cold-starts, and client-side neural/geometric facial analysis.
 
-### **Step 1: Download FER2013 Dataset**
-Download the FER2013 dataset from Kaggle or HuggingFace (`msambare/fer2013`) into your dataset folder with subdirectories for 4 emotions:
-```
-dataset/
-├── train/
-│   ├── Happy/
-│   ├── Sad/
-│   ├── Neutral/
-│   └── Angry/
-└── validation/
-    ├── Happy/
-    ├── Sad/
-    ├── Neutral/
-    └── Angry/
-```
+### Option A: 1-Click Git Import (Easiest)
+1. Push this repository to your **GitHub** account:
+   ```bash
+   git add .
+   git commit -m "Deploy MoodBeat on Vercel with modern UI"
+   git push origin main
+   ```
+2. Navigate to **[vercel.com/new](https://vercel.com/new)** and sign in with GitHub.
+3. Import your **`Music-Recommendation-Using-Sentiment-Analysis`** repository.
+4. Keep default settings:
+   - **Framework Preset**: Other / Vite
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `frontend/dist`
+5. Click **Deploy**. Your application will be live instantly with global HTTPS and custom domain support.
 
-### **Step 2: Run Training Script**
-On your remote CPU or GPU machine, run:
+### Option B: Deploy via Vercel CLI
 ```bash
-python ml_engine/train_fer2013.py --data_dir ./dataset --epochs 30 --batch_size 64
-```
+# Install Vercel CLI globally (if not already installed)
+npm install -g vercel
 
-### **Step 3: Save Trained Model Weights**
-Once training finishes, place the saved `emotion_model_best.pth` file inside `ml_engine/` directory:
+# Deploy directly from repository root
+vercel
 ```
-ml_engine/emotion_model_best.pth
-```
-`app.py` will automatically load your trained PyTorch weights for high-accuracy emotion inference!
 
 ---
 
-## 🎧 4 Core Moods & Music Strategy
+## Architecture & Features
 
-| Emotion | Recommended Music Strategy | Local Songs |
-| :--- | :--- | :--- |
-| **Happy** | Dance / Upbeat Pop | `Levitating`, `Heat Waves`, `Senorita` |
-| **Sad** | Motivational & Uplifting Songs | `Kar Har Maidaan Fateh`, `Unstoppable`, `Hall of Fame` |
-| **Neutral** | Lo-Fi Study Beats & Ambient | `Cozy Retro Lofi`, `Luv(sic.) pt3`, `Last Days of Summer` |
-| **Angry** | Calm & Peaceful Relaxation | `Idea 10`, `Spirit of Life`, `Time For a Coffee` |
+- **Clean Enterprise Dark Mode**: Inspired by Spotify and Linear design systems with custom typography, frosted glassmorphism, and responsive layouts.
+- **Client-Side Sentiment Engine**: Deterministic facial geometry and feature contour analysis runs directly in the browser via HTML5 Canvas and WebRTC video streams with zero backend latency or server sleep timeouts.
+- **Dynamic Waveform Player**: Embedded HTML5 audio player with real-time spectrum visualizer, scrub bar, BPM tag, volume mixer, and auto sentiment track sync.
+- **Curated 12-Track Catalog**: 4 targeted mood strategies loaded from bundled local audio assets:
+  - **Happy**: High-Energy & Upbeat Dance (*Levitating*, *Heat Waves*, *Senorita*)
+  - **Sad**: Resilient & Uplifting Anthems (*Kar Har Maidaan Fateh*, *Unstoppable*, *Hall of Fame*)
+  - **Neutral**: Focus, Lo-Fi & Ambient Chillout (*Cozy Retro Lofi Beat*, *Luv(sic.) pt3*, *The Last Days of Summer*)
+  - **Angry**: Calm, Downtempo & Ambient Rest (*Idea 10*, *Spirit of Life*, *Time For a Coffee*)
+- **Session Intelligence**: Session check-in logs, mood distribution analytics, and photo snapshot journal.
 
 ---
 
-## 💻 Local Setup
+## Local Development Setup
+
+### Prerequisites
+- Node.js (v18 or newer)
+- npm
+
+### Run Locally
 ```bash
-pip install -r requirements.txt
-streamlit run app.py
+# Install dependencies
+npm run build
+
+# Start Vite development server
+npm run dev
+```
+
+Visit `http://localhost:5173` in your browser.
+
+---
+
+## Project Structure
+
+```
+├── frontend/
+│   ├── public/
+│   │   └── audio/         # Curated local high-bitrate MP3 tracks
+│   ├── src/
+│   │   ├── components/    # Modular React UI components
+│   │   │   ├── Navbar.tsx
+│   │   │   ├── MusicPlayer.tsx
+│   │   │   ├── Playlist.tsx
+│   │   │   ├── EmotionGauge.tsx
+│   │   │   ├── MoodScannerModal.tsx
+│   │   │   ├── MoodJournal.tsx
+│   │   │   └── MoodAnalytics.tsx
+│   │   ├── services/      # Recommendation and sentiment services
+│   │   ├── index.css      # Design system tokens and styling
+│   │   ├── App.tsx        # Main application orchestrator
+│   │   └── types.ts       # TypeScript interface definitions
+│   ├── index.html         # Application root entry
+│   └── package.json
+├── package.json           # Root Vercel build orchestrator
+├── vercel.json            # Vercel deployment configuration
+└── README.md
 ```

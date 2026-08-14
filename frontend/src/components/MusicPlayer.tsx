@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, RefreshCw } from 'lucide-react';
+import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, RefreshCw, Disc, ShieldCheck } from 'lucide-react';
 import { Track, EmotionType } from '../types';
 
 interface MusicPlayerProps {
@@ -78,19 +78,19 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
 
   if (!track) {
     return (
-      <div className="glass-panel" style={{ padding: '2.5rem', textAlign: 'center', color: '#9CA3AF', borderRadius: '20px' }}>
-        <p>No track selected</p>
+      <div className="glass-panel" style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-secondary)', borderRadius: '20px' }}>
+        <p>No track currently selected.</p>
       </div>
     );
   }
 
   return (
     <div className="glass-panel" style={{
-      padding: '1.75rem',
-      borderRadius: '24px',
-      border: '1px solid rgba(255, 255, 255, 0.1)',
-      background: 'linear-gradient(180deg, rgba(20, 26, 40, 0.85), rgba(12, 16, 26, 0.95))',
-      boxShadow: '0 20px 40px -15px rgba(0, 0, 0, 0.5)'
+      padding: '1.6rem',
+      borderRadius: '20px',
+      border: '1px solid rgba(255, 255, 255, 0.09)',
+      background: 'linear-gradient(180deg, rgba(18, 24, 38, 0.85), rgba(11, 15, 24, 0.95))',
+      boxShadow: '0 20px 40px -15px rgba(0, 0, 0, 0.6)'
     }}>
       
       <audio
@@ -100,97 +100,125 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
         onEnded={onNext}
       />
 
-      {/* Modern Compact Header Controls */}
+      {/* Header Status Bar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
-        <span style={{
-          fontSize: '0.75rem',
-          fontWeight: 700,
-          padding: '0.2rem 0.65rem',
-          borderRadius: '12px',
-          background: `${accentColor}20`,
-          color: accentColor,
-          letterSpacing: '0.05em',
-          textTransform: 'uppercase'
-        }}>
-          {currentMood} Mood Matched
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+          <span style={{
+            fontSize: '0.72rem',
+            fontWeight: 700,
+            padding: '0.22rem 0.65rem',
+            borderRadius: '8px',
+            background: `${accentColor}1C`,
+            border: `1px solid ${accentColor}44`,
+            color: accentColor,
+            letterSpacing: '0.04em',
+            textTransform: 'uppercase',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.35rem'
+          }}>
+            <ShieldCheck size={12} />
+            <span>{currentMood} Matched Playlist</span>
+          </span>
+        </div>
 
         <button
           onClick={onToggleAutoSync}
           style={{
             background: 'none',
             border: 'none',
-            color: autoSync ? accentColor : '#9CA3AF',
+            color: autoSync ? accentColor : 'var(--text-tertiary)',
             fontSize: '0.75rem',
             fontWeight: 600,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.35rem'
+            gap: '0.4rem',
+            transition: 'color 0.15s ease'
           }}
+          title="Auto-synchronize player with sentiment scans"
         >
           <RefreshCw size={12} style={{ animation: autoSync ? 'spin 8s linear infinite' : 'none' }} />
-          <span>Auto Mood Sync</span>
+          <span>Auto Sentiment Sync</span>
         </button>
       </div>
 
       {/* Hero Track Info Row */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '1.4rem' }}>
+        
+        {/* Album Artwork with Ambient Shadow */}
         <div style={{
           position: 'relative',
-          width: '96px',
-          height: '96px',
-          borderRadius: '16px',
+          width: '90px',
+          height: '90px',
+          borderRadius: '14px',
           overflow: 'hidden',
-          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.4)',
-          flexShrink: 0
+          boxShadow: `0 8px 24px ${accentColor}25, 0 4px 12px rgba(0, 0, 0, 0.5)`,
+          flexShrink: 0,
+          border: '1px solid rgba(255, 255, 255, 0.1)'
         }}>
           <img src={track.coverUrl} alt={track.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          
           {isPlaying && (
             <div style={{
               position: 'absolute',
               inset: 0,
-              background: 'rgba(0,0,0,0.3)',
+              background: 'rgba(0, 0, 0, 0.45)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '3px'
+              backdropFilter: 'blur(2px)'
             }}>
-              <div className="equalizer-bar" />
-              <div className="equalizer-bar" />
-              <div className="equalizer-bar" />
+              <div className="equalizer-container">
+                <div className={`equalizer-bar ${isPlaying ? 'playing' : ''}`} />
+                <div className={`equalizer-bar ${isPlaying ? 'playing' : ''}`} />
+                <div className={`equalizer-bar ${isPlaying ? 'playing' : ''}`} />
+              </div>
             </div>
           )}
         </div>
 
+        {/* Metadata Details */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <h2 style={{
             fontSize: '1.35rem',
             fontWeight: 800,
             margin: 0,
-            color: '#FFF',
+            color: 'var(--text-primary)',
             whiteSpace: 'nowrap',
             overflow: 'hidden',
-            textOverflow: 'ellipsis'
+            textOverflow: 'ellipsis',
+            letterSpacing: '-0.02em'
           }}>
             {track.title}
           </h2>
 
           <p style={{
-            fontSize: '0.95rem',
-            color: '#9CA3AF',
-            margin: '0.25rem 0 0 0',
+            fontSize: '0.9rem',
+            color: 'var(--text-secondary)',
+            margin: '0.2rem 0 0 0',
             whiteSpace: 'nowrap',
             overflow: 'hidden',
-            textOverflow: 'ellipsis'
+            textOverflow: 'ellipsis',
+            fontWeight: 500
           }}>
             {track.artist}
           </p>
 
-          <div style={{ fontSize: '0.75rem', color: '#6B7280', marginTop: '0.35rem' }}>
-            {track.genre}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginTop: '0.4rem', fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
+            <span style={{
+              padding: '0.12rem 0.45rem',
+              borderRadius: '6px',
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid rgba(255, 255, 255, 0.08)'
+            }}>
+              {track.genre}
+            </span>
+            <span>•</span>
+            <span>{track.bpm} BPM</span>
           </div>
         </div>
+
       </div>
 
       {/* Progress & Duration Bar */}
@@ -208,17 +236,17 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
             height: '4px'
           }}
         />
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#9CA3AF', marginTop: '0.35rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '0.35rem', fontWeight: 500 }}>
           <span>{formatTime(currentTime)}</span>
           <span>{formatTime(duration)}</span>
         </div>
       </div>
 
-      {/* Primary Control Buttons Bar */}
+      {/* Control Actions Row */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         
-        {/* Volume */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', width: '100px' }}>
+        {/* Volume Controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', width: '120px' }}>
           <button
             onClick={() => {
               if (audioRef.current) {
@@ -226,7 +254,8 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
                 setIsMuted(!isMuted);
               }
             }}
-            style={{ background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer' }}
+            style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+            title={isMuted ? "Unmute" : "Mute"}
           >
             {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
           </button>
@@ -237,25 +266,27 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
             step={0.05}
             value={isMuted ? 0 : volume}
             onChange={handleVolumeChange}
-            style={{ width: '60px', accentColor: accentColor }}
+            style={{ width: '70px', accentColor: accentColor }}
           />
         </div>
 
-        {/* Play/Pause/Skip Controls */}
+        {/* Playback Controls: Prev, Play/Pause, Next */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
           <button
             onClick={onPrev}
             style={{
               background: 'none',
               border: 'none',
-              color: '#E5E7EB',
+              color: 'var(--text-secondary)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              transition: 'color 0.15s ease'
             }}
+            title="Previous Track"
           >
-            <SkipBack size={20} />
+            <SkipBack size={19} />
           </button>
 
           <button
@@ -264,18 +295,19 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
               background: accentColor,
               border: 'none',
               borderRadius: '50%',
-              width: '52px',
-              height: '52px',
+              width: '48px',
+              height: '48px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#000',
+              color: '#090C13',
               cursor: 'pointer',
-              boxShadow: `0 8px 20px ${accentColor}55`,
+              boxShadow: `0 6px 20px ${accentColor}50`,
               transition: 'transform 0.15s ease'
             }}
+            title={isPlaying ? "Pause" : "Play"}
           >
-            {isPlaying ? <Pause size={22} /> : <Play size={22} style={{ marginLeft: '2px' }} />}
+            {isPlaying ? <Pause size={20} /> : <Play size={20} style={{ marginLeft: '2px' }} />}
           </button>
 
           <button
@@ -283,19 +315,22 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
             style={{
               background: 'none',
               border: 'none',
-              color: '#E5E7EB',
+              color: 'var(--text-secondary)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              transition: 'color 0.15s ease'
             }}
+            title="Next Track"
           >
-            <SkipForward size={20} />
+            <SkipForward size={19} />
           </button>
         </div>
 
-        <div style={{ width: '100px', textAlign: 'right', fontSize: '0.75rem', color: '#6B7280' }}>
-          {track.bpm} BPM
+        {/* Track Format Tag */}
+        <div style={{ width: '120px', textAlign: 'right', fontSize: '0.72rem', color: 'var(--text-tertiary)', fontWeight: 500 }}>
+          HQ Audio 320kbps
         </div>
 
       </div>

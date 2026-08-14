@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Music, Search, Play, Library } from 'lucide-react';
+import { Music, Search, Play, Layers, Sparkles, X } from 'lucide-react';
 import { Track, EmotionType } from '../types';
 
 interface PlaylistProps {
@@ -27,7 +27,7 @@ export const Playlist: React.FC<PlaylistProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  // Filtering: If isLibraryMode is false, strictly show ONLY the 3 tracks matching current selectedMood!
+  // Filtering: If isLibraryMode is false, show tracks matching selectedMood
   const moodFilteredTracks = isLibraryMode
     ? tracks
     : tracks.filter(t => t.mood === selectedMood);
@@ -42,70 +42,91 @@ export const Playlist: React.FC<PlaylistProps> = ({
   });
 
   return (
-    <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '24px' }}>
+    <div className="glass-panel" style={{ padding: '1.4rem', borderRadius: '20px' }}>
       
       {/* Header Bar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          <Music size={18} color={accentColor} />
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, color: '#FFF' }}>
-            {isLibraryMode ? 'Full Music Library (12 Songs)' : `${selectedMood} Playlist (3 Songs)`}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+          <Music size={16} color={accentColor} />
+          <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+            {isLibraryMode ? 'Curated Music Library' : `${selectedMood} Recommendation Queue`}
           </h3>
+          <span style={{
+            fontSize: '0.7rem',
+            fontWeight: 600,
+            padding: '0.1rem 0.45rem',
+            borderRadius: '6px',
+            background: 'rgba(255, 255, 255, 0.06)',
+            color: 'var(--text-tertiary)'
+          }}>
+            {finalTracks.length} {finalTracks.length === 1 ? 'track' : 'tracks'}
+          </span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
           {/* Library Toggle Button */}
           <button
             onClick={onToggleLibrary}
             style={{
               padding: '0.35rem 0.75rem',
-              borderRadius: '16px',
-              border: `1px solid ${isLibraryMode ? accentColor : 'rgba(255,255,255,0.12)'}`,
-              background: isLibraryMode ? `${accentColor}20` : 'rgba(255,255,255,0.05)',
-              color: isLibraryMode ? accentColor : '#9CA3AF',
+              borderRadius: '10px',
+              border: `1px solid ${isLibraryMode ? accentColor : 'rgba(255,255,255,0.08)'}`,
+              background: isLibraryMode ? `${accentColor}18` : 'rgba(255,255,255,0.03)',
+              color: isLibraryMode ? accentColor : 'var(--text-secondary)',
               fontSize: '0.75rem',
               fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.35rem'
+              gap: '0.35rem',
+              transition: 'all 0.15s ease'
             }}
           >
-            <Library size={12} />
-            <span>{isLibraryMode ? 'Show Mood Playlist Only' : 'Browse All 12 Songs'}</span>
+            <Layers size={13} />
+            <span>{isLibraryMode ? 'Show Mood Playlist' : 'Browse All Tracks'}</span>
           </button>
 
-          {/* Search Bar */}
+          {/* Search Input Box */}
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            background: 'rgba(255,255,255,0.05)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: '20px',
-            padding: '0.3rem 0.75rem'
+            background: 'rgba(255, 255, 255, 0.04)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: '10px',
+            padding: '0.3rem 0.65rem'
           }}>
-            <Search size={13} color="#9CA3AF" style={{ marginRight: '0.35rem' }} />
+            <Search size={13} color="var(--text-tertiary)" style={{ marginRight: '0.35rem' }} />
             <input
               type="text"
-              placeholder="Search..."
+              placeholder="Search title, artist..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{
                 background: 'none',
                 border: 'none',
                 outline: 'none',
-                color: '#FFF',
-                fontSize: '0.8rem',
-                width: '110px'
+                color: 'var(--text-primary)',
+                fontSize: '0.78rem',
+                width: '130px'
               }}
             />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+              >
+                <X size={12} />
+              </button>
+            )}
           </div>
         </div>
+
       </div>
 
-      {/* Mood Tabs (Visible when in Library Mode) */}
+      {/* Mood Filter Tabs (Visible when in Library Mode) */}
       {isLibraryMode && (
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
+        <div style={{ display: 'flex', gap: '0.45rem', marginBottom: '1rem', overflowX: 'auto', paddingBottom: '0.2rem' }}>
           {MOODS.map(m => {
             const isActive = m === selectedMood;
             return (
@@ -113,15 +134,16 @@ export const Playlist: React.FC<PlaylistProps> = ({
                 key={m}
                 onClick={() => onFilterMood(m)}
                 style={{
-                  padding: '0.3rem 0.8rem',
-                  borderRadius: '20px',
-                  border: `1px solid ${isActive ? accentColor : 'rgba(255,255,255,0.1)'}`,
-                  background: isActive ? `${accentColor}25` : 'rgba(255,255,255,0.04)',
-                  color: isActive ? accentColor : '#9CA3AF',
-                  fontWeight: isActive ? 700 : 400,
-                  fontSize: '0.8rem',
+                  padding: '0.3rem 0.75rem',
+                  borderRadius: '8px',
+                  border: `1px solid ${isActive ? accentColor : 'rgba(255,255,255,0.08)'}`,
+                  background: isActive ? `${accentColor}20` : 'rgba(255,255,255,0.03)',
+                  color: isActive ? accentColor : 'var(--text-secondary)',
+                  fontWeight: isActive ? 700 : 500,
+                  fontSize: '0.78rem',
                   cursor: 'pointer',
-                  whiteSpace: 'nowrap'
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.15s ease'
                 }}
               >
                 {m}
@@ -132,7 +154,7 @@ export const Playlist: React.FC<PlaylistProps> = ({
       )}
 
       {/* Track List */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
         {finalTracks.length > 0 ? (
           finalTracks.map(t => {
             const isCurrent = t.id === currentTrackId;
@@ -147,9 +169,9 @@ export const Playlist: React.FC<PlaylistProps> = ({
                   alignItems: 'center',
                   gap: '0.85rem',
                   padding: '0.65rem 0.85rem',
-                  borderRadius: '16px',
-                  border: `1px solid ${isCurrent ? accentColor : 'rgba(255, 255, 255, 0.08)'}`,
-                  background: isCurrent ? `${accentColor}18` : 'rgba(255, 255, 255, 0.03)',
+                  borderRadius: '14px',
+                  border: `1px solid ${isCurrent ? accentColor : 'rgba(255, 255, 255, 0.06)'}`,
+                  background: isCurrent ? `${accentColor}14` : 'rgba(255, 255, 255, 0.02)',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease'
                 }}
@@ -157,11 +179,12 @@ export const Playlist: React.FC<PlaylistProps> = ({
                 {/* Track Thumbnail */}
                 <div style={{
                   position: 'relative',
-                  width: '42px',
-                  height: '42px',
-                  borderRadius: '10px',
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '9px',
                   overflow: 'hidden',
-                  flexShrink: 0
+                  flexShrink: 0,
+                  border: '1px solid rgba(255, 255, 255, 0.08)'
                 }}>
                   <img src={t.coverUrl} alt={t.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   {isCurrent && (
@@ -173,7 +196,7 @@ export const Playlist: React.FC<PlaylistProps> = ({
                       alignItems: 'center',
                       justifyContent: 'center'
                     }}>
-                      <Play size={16} color={accentColor} fill={accentColor} />
+                      <Play size={15} color={accentColor} fill={accentColor} />
                     </div>
                   )}
                 </div>
@@ -181,10 +204,10 @@ export const Playlist: React.FC<PlaylistProps> = ({
                 {/* Metadata */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <h4 style={{
-                    fontSize: '0.9rem',
+                    fontSize: '0.88rem',
                     fontWeight: isCurrent ? 700 : 500,
                     margin: 0,
-                    color: isCurrent ? accentColor : '#FFF',
+                    color: isCurrent ? accentColor : 'var(--text-primary)',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis'
@@ -193,29 +216,30 @@ export const Playlist: React.FC<PlaylistProps> = ({
                   </h4>
                   <p style={{
                     fontSize: '0.75rem',
-                    color: '#9CA3AF',
+                    color: 'var(--text-secondary)',
                     margin: '0.1rem 0 0 0',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis'
                   }}>
-                    {t.artist} • <span style={{ color: '#6B7280' }}>{t.genre}</span>
+                    {t.artist} • <span style={{ color: 'var(--text-tertiary)' }}>{t.genre}</span>
                   </p>
                 </div>
 
                 {/* Mood Tag & Duration */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                   <span style={{
-                    fontSize: '0.7rem',
-                    padding: '0.15rem 0.5rem',
-                    borderRadius: '8px',
-                    background: `${t.themeColor}22`,
+                    fontSize: '0.68rem',
+                    padding: '0.15rem 0.45rem',
+                    borderRadius: '6px',
+                    background: `${t.themeColor}1C`,
+                    border: `1px solid ${t.themeColor}40`,
                     color: t.themeColor,
                     fontWeight: 600
                   }}>
                     {t.mood}
                   </span>
-                  <span style={{ fontSize: '0.75rem', color: '#6B7280' }}>
+                  <span style={{ fontSize: '0.74rem', color: 'var(--text-tertiary)', fontWeight: 500 }}>
                     {Math.floor(t.duration / 60)}:{(t.duration % 60 < 10 ? '0' : '') + (t.duration % 60)}
                   </span>
                 </div>
@@ -224,8 +248,8 @@ export const Playlist: React.FC<PlaylistProps> = ({
             );
           })
         ) : (
-          <div style={{ padding: '2rem', textAlign: 'center', color: '#9CA3AF', fontSize: '0.85rem' }}>
-            No tracks found
+          <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: '0.85rem' }}>
+            No tracks found matching your search.
           </div>
         )}
       </div>

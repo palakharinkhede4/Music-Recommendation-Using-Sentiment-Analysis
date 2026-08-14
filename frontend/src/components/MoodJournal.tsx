@@ -1,5 +1,5 @@
 import React from 'react';
-import { Camera, Calendar } from 'lucide-react';
+import { Camera, Calendar, History } from 'lucide-react';
 import { EmotionType } from '../types';
 
 export interface MoodSnapshotLog {
@@ -17,38 +17,40 @@ interface MoodJournalProps {
 }
 
 const EMOTION_COLORS: Record<EmotionType, string> = {
-  Happy: '#EAB308',
+  Happy: '#F59E0B',
   Sad: '#3B82F6',
   Neutral: '#8B5CF6',
-  Angry: '#EF4444'
+  Angry: '#F43F5E'
 };
 
 export const MoodJournal: React.FC<MoodJournalProps> = ({ logs, accentColor, onOpenScanner }) => {
   if (logs.length === 0) return null;
 
   return (
-    <div className="glass-panel" style={{ padding: '1.25rem', marginTop: '1.25rem', borderRadius: '20px' }}>
+    <div className="glass-panel" style={{ padding: '1.25rem', marginTop: '1.25rem', borderRadius: '18px' }}>
       
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Calendar size={17} color={accentColor} />
-          <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: 0, color: '#FFF' }}>Session Vibe Snapshots</h3>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.9rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+          <History size={16} color={accentColor} />
+          <h3 style={{ fontSize: '0.95rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
+            Session Sentiment Snapshots
+          </h3>
         </div>
 
         <button
           onClick={onOpenScanner}
           style={{
-            background: `${accentColor}25`,
-            border: `1px solid ${accentColor}66`,
+            background: `${accentColor}18`,
+            border: `1px solid ${accentColor}44`,
             color: accentColor,
-            padding: '0.35rem 0.85rem',
-            borderRadius: '20px',
-            fontSize: '0.75rem',
+            padding: '0.3rem 0.75rem',
+            borderRadius: '8px',
+            fontSize: '0.74rem',
             fontWeight: 700,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.4rem'
+            gap: '0.35rem'
           }}
         >
           <Camera size={13} />
@@ -56,7 +58,7 @@ export const MoodJournal: React.FC<MoodJournalProps> = ({ logs, accentColor, onO
         </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '0.75rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '0.65rem' }}>
         {logs.map(log => {
           const col = EMOTION_COLORS[log.mood];
 
@@ -65,28 +67,28 @@ export const MoodJournal: React.FC<MoodJournalProps> = ({ logs, accentColor, onO
               key={log.id}
               className="glass-card"
               style={{
-                padding: '0.5rem',
-                borderRadius: '14px',
-                border: `1px solid ${col}44`,
-                background: `${col}10`
+                padding: '0.45rem',
+                borderRadius: '12px',
+                border: `1px solid ${col}33`,
+                background: `${col}0C`
               }}
             >
               <div style={{
                 width: '100%',
-                height: '90px',
-                borderRadius: '10px',
+                height: '85px',
+                borderRadius: '8px',
                 overflow: 'hidden',
-                marginBottom: '0.4rem',
-                border: `1px solid ${col}66`
+                marginBottom: '0.35rem',
+                border: `1px solid ${col}44`
               }}>
                 <img src={log.snapshotUrl} alt={log.mood} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: col }}>
+                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: col }}>
                   {log.mood}
                 </span>
-                <span style={{ fontSize: '0.65rem', color: '#9CA3AF' }}>
+                <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>
                   {log.timestamp}
                 </span>
               </div>
