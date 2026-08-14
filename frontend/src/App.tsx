@@ -25,6 +25,16 @@ const DEFAULT_SCORES: EmotionScore[] = [
 ];
 
 export const App: React.FC = () => {
+  // Light / Dark Theme State defaulting to System Preferences
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const saved = localStorage.getItem('moodbeat_theme');
+    if (saved === 'light' || saved === 'dark') return saved;
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      return 'dark';
+    }
+    return 'light';
+  });
+
   const [currentMood, setCurrentMood] = useState<EmotionType>('Neutral');
   const [selectedFilterMood, setSelectedFilterMood] = useState<EmotionType>('Neutral');
   const [emotionScores, setEmotionScores] = useState<EmotionScore[]>(DEFAULT_SCORES);
@@ -44,6 +54,30 @@ export const App: React.FC = () => {
 
   const accentColor = EMOTION_COLORS[currentMood];
 
+  // Apply Theme Attribute to root document
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('moodbeat_theme', theme);
+  }, [theme]);
+
+  // Listen for system theme preference changes if user hasn't explicitly overridden
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = (e: MediaQueryListEvent) => {
+      if (!localStorage.getItem('moodbeat_theme_override')) {
+        setTheme(e.matches ? 'dark' : 'light');
+      }
+    };
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
+
+  const handleToggleTheme = () => {
+    const nextTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(nextTheme);
+    localStorage.setItem('moodbeat_theme_override', 'true');
+  };
+
   // Load Tracks
   useEffect(() => {
     async function loadTracks() {
@@ -62,7 +96,7 @@ export const App: React.FC = () => {
   // Update Dynamic Theme Accents in CSS variables
   useEffect(() => {
     document.documentElement.style.setProperty('--active-accent', accentColor);
-    document.documentElement.style.setProperty('--active-accent-glow', `${accentColor}30`);
+    document.documentElement.style.setProperty('--active-accent-glow', `${accentColor}25`);
   }, [accentColor]);
 
   // Handle Camera Snapshot Scan Complete
@@ -79,7 +113,7 @@ export const App: React.FC = () => {
       mood: primary,
       timestamp: nowStr,
       snapshotUrl: snapshotDataUrl,
-      vibeTag: `${primary} Analysis`
+      vibeTag: `${primary} Check-in`
     };
 
     setSnapshotLogs(prev => [newLog, ...prev]);
@@ -106,25 +140,25 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="app-container" style={{ maxWidth: '1080px' }}>
+    <div className="app-container">
       
-      {/* Top Navbar with Scan Sentiment button & user avatar */}
+      {/* Top Navbar with Theme Switcher, Detect Mood button, and User Snapshot */}
       <Navbar
         currentMood={currentMood}
         snapshotUrl={latestSnapshotUrl}
         accentColor={accentColor}
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
         onOpenScanner={() => setIsScannerOpen(true)}
-        onToggleLibrary={() => setIsLibraryMode(!isLibraryMode)}
-        isLibraryOpen={isLibraryMode}
       />
 
-      {/* Emotion Confidence Metrics Widget */}
+      {/* Mood Confidence Metrics Widget */}
       <EmotionGauge
         scores={emotionScores}
         primaryMood={currentMood}
       />
 
-      {/* Hero Music Player & Playlist Grid */}
+      {/* Main Music Experience Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.25rem' }}>
         
         <MusicPlayer
@@ -135,6 +169,7 @@ export const App: React.FC = () => {
           onPrev={handlePrevTrack}
           autoSync={autoSync}
           onToggleAutoSync={() => setAutoSync(!autoSync)}
+          onOpenScanner={() => setIsScannerOpen(true)}
         />
 
         <Playlist
@@ -153,7 +188,7 @@ export const App: React.FC = () => {
 
       </div>
 
-      {/* Session Snapshots & Sentiment Analytics */}
+      {/* Session Snapshots & Analytics */}
       <MoodJournal
         logs={snapshotLogs}
         accentColor={accentColor}
@@ -165,7 +200,7 @@ export const App: React.FC = () => {
         accentColor={accentColor}
       />
 
-      {/* Camera Scan Modal */}
+      {/* Camera Facial Scan Modal */}
       <MoodScannerModal
         isOpen={isScannerOpen}
         onClose={() => setIsScannerOpen(false)}

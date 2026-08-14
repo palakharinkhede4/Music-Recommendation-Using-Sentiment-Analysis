@@ -1,62 +1,49 @@
 import React from 'react';
-import { Radio, Camera, Disc3, Layers } from 'lucide-react';
+import { Radio, Camera, Sun, Moon } from 'lucide-react';
 import { EmotionType } from '../types';
 
 interface NavbarProps {
   currentMood: EmotionType;
   snapshotUrl: string | null;
   accentColor: string;
+  theme: 'light' | 'dark';
+  onToggleTheme: () => void;
   onOpenScanner: () => void;
-  onToggleLibrary: () => void;
-  isLibraryOpen: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   currentMood,
   snapshotUrl,
   accentColor,
-  onOpenScanner,
-  onToggleLibrary,
-  isLibraryOpen
+  theme,
+  onToggleTheme,
+  onOpenScanner
 }) => {
   return (
-    <header className="glass-panel" style={{ padding: '0.85rem 1.4rem', marginBottom: '1.25rem', borderRadius: '18px' }}>
+    <header className="glass-panel" style={{ padding: '0.85rem 1.4rem', marginBottom: '1.25rem', borderRadius: '20px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
         
         {/* Brand Icon & Name */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <div style={{
-            background: `linear-gradient(135deg, ${accentColor}, #4F46E5)`,
+            background: `linear-gradient(135deg, ${accentColor}, #6366F1)`,
             width: '40px',
             height: '40px',
-            borderRadius: '11px',
+            borderRadius: '12px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: `0 0 16px ${accentColor}40`
+            boxShadow: `0 4px 14px ${accentColor}35`,
+            color: '#FFFFFF'
           }}>
-            <Radio color="#FFF" size={20} />
+            <Radio size={20} />
           </div>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <h1 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, lineHeight: 1.1, color: '#FFF', letterSpacing: '-0.03em' }}>
-                Mood<span style={{ color: accentColor }}>Beat</span>
-              </h1>
-              <span style={{
-                fontSize: '0.65rem',
-                fontWeight: 700,
-                padding: '0.15rem 0.45rem',
-                borderRadius: '6px',
-                background: 'rgba(255, 255, 255, 0.08)',
-                color: 'var(--text-secondary)',
-                letterSpacing: '0.04em',
-                textTransform: 'uppercase'
-              }}>
-                v2.0
-              </span>
-            </div>
-            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: 0, fontWeight: 400 }}>
-              Real-Time Sentiment Audio Engine
+            <h1 style={{ fontSize: '1.3rem', fontWeight: 800, margin: 0, lineHeight: 1.1, letterSpacing: '-0.02em' }}>
+              Mood<span style={{ color: accentColor }}>Beat</span>
+            </h1>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: 0, fontWeight: 500 }}>
+              Sentiment Music Player
             </p>
           </div>
         </div>
@@ -64,103 +51,97 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Action Controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
           
-          {/* Library Toggle Button */}
+          {/* Light / Dark Mode Toggle */}
           <button
-            onClick={onToggleLibrary}
+            onClick={onToggleTheme}
             style={{
+              width: '38px',
+              height: '38px',
+              borderRadius: '12px',
+              border: '1px solid var(--border-subtle)',
+              background: 'var(--bg-surface-hover)',
+              color: 'var(--text-primary)',
+              cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.45rem',
-              padding: '0.45rem 0.85rem',
-              background: isLibraryOpen ? `${accentColor}1C` : 'rgba(255,255,255,0.05)',
-              border: `1px solid ${isLibraryOpen ? accentColor : 'rgba(255,255,255,0.1)'}`,
-              borderRadius: '10px',
-              fontSize: '0.8rem',
-              fontWeight: 600,
-              color: isLibraryOpen ? accentColor : 'var(--text-primary)',
-              cursor: 'pointer',
+              justifyContent: 'center',
               transition: 'all 0.15s ease'
             }}
+            title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
           >
-            <Layers size={14} />
-            <span>{isLibraryOpen ? 'Mood Tracks' : 'Full Library'}</span>
+            {theme === 'light' ? <Moon size={17} /> : <Sun size={17} />}
           </button>
 
-          {/* Scan Sentiment Button */}
+          {/* Primary Detect Mood Button */}
           <button
-            onClick={onOpenScanner}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              padding: '0.45rem 0.95rem',
-              background: accentColor,
-              border: 'none',
-              borderRadius: '10px',
-              fontSize: '0.8rem',
-              fontWeight: 700,
-              color: '#090C13',
-              cursor: 'pointer',
-              boxShadow: `0 4px 14px ${accentColor}35`,
-              transition: 'transform 0.15s ease'
-            }}
-          >
-            <Camera size={14} />
-            <span>Scan Sentiment</span>
-          </button>
-
-          {/* Active Mood Pill & User Snapshot */}
-          <div
             onClick={onOpenScanner}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: '0.5rem',
-              padding: '0.2rem 0.65rem 0.2rem 0.2rem',
-              background: 'rgba(255,255,255,0.04)',
+              padding: '0.55rem 1.1rem',
+              background: accentColor,
+              border: 'none',
+              borderRadius: '12px',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              color: '#FFFFFF',
+              cursor: 'pointer',
+              boxShadow: `0 4px 14px ${accentColor}40`,
+              transition: 'transform 0.15s ease, box-shadow 0.15s ease'
+            }}
+          >
+            <Camera size={16} />
+            <span>Detect Mood</span>
+          </button>
+
+          {/* User Snapshot / Mood Chip */}
+          <div
+            onClick={onOpenScanner}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              padding: '0.2rem 0.65rem 0.2rem 0.25rem',
+              background: 'var(--bg-surface-hover)',
               border: `1px solid ${accentColor}35`,
               borderRadius: '12px',
               cursor: 'pointer'
             }}
-            title="Current Detected Mood. Click to re-scan."
+            title="Current sentiment. Click to capture new photo."
           >
             {snapshotUrl ? (
               <img
                 src={snapshotUrl}
-                alt="Captured Face"
+                alt="Face Snapshot"
                 style={{
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '8px',
+                  width: '30px',
+                  height: '30px',
+                  borderRadius: '9px',
                   objectFit: 'cover',
                   border: `1.5px solid ${accentColor}`
                 }}
               />
             ) : (
               <div style={{
-                width: '28px',
-                height: '28px',
-                borderRadius: '8px',
-                backgroundColor: `${accentColor}25`,
+                width: '30px',
+                height: '30px',
+                borderRadius: '9px',
+                backgroundColor: `${accentColor}20`,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: accentColor
+                color: accentColor,
+                fontWeight: 700,
+                fontSize: '0.75rem'
               }}>
-                <Disc3 size={14} />
+                <Camera size={15} />
               </div>
             )}
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.78rem', fontWeight: 600, color: accentColor }}>
-              <span style={{
-                width: '6px',
-                height: '6px',
-                borderRadius: '50%',
-                backgroundColor: accentColor,
-                display: 'inline-block'
-              }} />
-              <span>{currentMood}</span>
-            </div>
+            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: accentColor }}>
+              {currentMood}
+            </span>
           </div>
 
         </div>

@@ -11,19 +11,19 @@ export const EmotionGauge: React.FC<EmotionGaugeProps> = ({ scores, primaryMood 
   const filteredScores = scores.filter(s => s.emotion !== ('Surprise' as any));
 
   return (
-    <div className="glass-panel" style={{ padding: '0.9rem 1.25rem', borderRadius: '18px', marginBottom: '1.25rem' }}>
+    <div className="glass-panel" style={{ padding: '0.85rem 1.25rem', borderRadius: '18px', marginBottom: '1.25rem' }}>
       
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.65rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>
           <Activity size={14} color="var(--active-accent)" />
-          <span>Real-Time Sentiment Metrics</span>
+          <span>Mood Confidence</span>
         </div>
         <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', fontWeight: 500 }}>
-          Neural Vision Analysis
+          Sentiment Distribution
         </span>
       </div>
 
-      {/* Compact Horizontal Grid for 4 Sentiments */}
+      {/* 4 Mood Confidence Pills Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.6rem' }}>
         {filteredScores.map(({ emotion, score, color }) => {
           const isPrimary = emotion === primaryMood;
@@ -33,19 +33,18 @@ export const EmotionGauge: React.FC<EmotionGaugeProps> = ({ scores, primaryMood 
             <div
               key={emotion}
               style={{
-                background: isPrimary ? `${color}14` : 'rgba(255,255,255,0.02)',
-                border: `1px solid ${isPrimary ? `${color}55` : 'rgba(255,255,255,0.06)'}`,
-                borderRadius: '12px',
-                padding: '0.55rem 0.75rem',
+                background: isPrimary ? `${color}18` : 'var(--bg-surface-hover)',
+                border: `1.5px solid ${isPrimary ? color : 'transparent'}`,
+                borderRadius: '14px',
+                padding: '0.5rem 0.65rem',
                 textAlign: 'center',
-                transition: 'all 0.2s ease'
+                transition: 'all 0.15s ease'
               }}
             >
               <div style={{
                 fontSize: '0.72rem',
                 color: isPrimary ? color : 'var(--text-secondary)',
-                fontWeight: isPrimary ? 700 : 500,
-                letterSpacing: '0.01em'
+                fontWeight: isPrimary ? 700 : 600
               }}>
                 {emotion}
               </div>
@@ -57,14 +56,13 @@ export const EmotionGauge: React.FC<EmotionGaugeProps> = ({ scores, primaryMood 
               }}>
                 {percentage}%
               </div>
-              {/* Refined Indicator Bar */}
               <div style={{
                 width: '100%',
                 height: '3.5px',
-                backgroundColor: 'rgba(255,255,255,0.06)',
+                backgroundColor: 'var(--slider-track)',
                 borderRadius: '3px',
                 overflow: 'hidden',
-                marginTop: '0.2rem'
+                marginTop: '0.15rem'
               }}>
                 <div style={{
                   width: `${percentage}%`,

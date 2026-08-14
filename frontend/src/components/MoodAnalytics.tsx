@@ -27,22 +27,22 @@ export const MoodAnalytics: React.FC<MoodAnalyticsProps> = ({ history, accentCol
   const emotions: EmotionType[] = ['Happy', 'Neutral', 'Sad', 'Angry'];
 
   return (
-    <div className="glass-panel" style={{ padding: '1.25rem', marginTop: '1.25rem', borderRadius: '18px' }}>
+    <div className="glass-panel" style={{ padding: '1.25rem', marginTop: '1.25rem', borderRadius: '20px' }}>
       
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.9rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
           <BarChart2 size={16} color={accentColor} />
           <h2 style={{ fontSize: '0.95rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
             Session Sentiment Distribution
           </h2>
         </div>
-        <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: '0.3rem', fontWeight: 500 }}>
+        <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: '0.3rem', fontWeight: 600 }}>
           <Clock size={12} />
           <span>{history.length} Live Check-Ins</span>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(105px, 1fr))', gap: '0.65rem', marginBottom: '1.1rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(105px, 1fr))', gap: '0.65rem', marginBottom: '1rem' }}>
         {emotions.map(m => {
           const cnt = counts[m];
           const pct = ((cnt / totalDetections) * 100).toFixed(0);
@@ -52,20 +52,20 @@ export const MoodAnalytics: React.FC<MoodAnalyticsProps> = ({ history, accentCol
             <div
               key={m}
               style={{
-                background: `${col}0E`,
-                border: `1px solid ${col}30`,
-                borderRadius: '12px',
+                background: `${col}10`,
+                border: `1.5px solid ${col}25`,
+                borderRadius: '14px',
                 padding: '0.65rem',
                 textAlign: 'center'
               }}
             >
-              <div style={{ fontSize: '0.72rem', color: col, fontWeight: 600, marginBottom: '0.15rem' }}>
+              <div style={{ fontSize: '0.74rem', color: col, fontWeight: 700, marginBottom: '0.15rem' }}>
                 {m}
               </div>
               <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                 {pct}%
               </div>
-              <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>
                 {cnt} {cnt === 1 ? 'scan' : 'scans'}
               </div>
             </div>
@@ -74,10 +74,10 @@ export const MoodAnalytics: React.FC<MoodAnalyticsProps> = ({ history, accentCol
       </div>
 
       <div>
-        <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginBottom: '0.45rem', fontWeight: 600 }}>
+        <div style={{ fontSize: '0.74rem', color: 'var(--text-tertiary)', marginBottom: '0.4rem', fontWeight: 600 }}>
           Timeline Sequence
         </div>
-        <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', maxHeight: '45px', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', maxHeight: '40px', overflow: 'hidden' }}>
           {history.slice(-25).map((item, idx) => (
             <span
               key={idx}

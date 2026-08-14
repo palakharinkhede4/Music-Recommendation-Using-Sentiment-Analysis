@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, RefreshCw, Disc, ShieldCheck } from 'lucide-react';
+import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, RefreshCw, Camera, Sparkles } from 'lucide-react';
 import { Track, EmotionType } from '../types';
 
 interface MusicPlayerProps {
@@ -10,6 +10,7 @@ interface MusicPlayerProps {
   onPrev: () => void;
   autoSync: boolean;
   onToggleAutoSync: () => void;
+  onOpenScanner: () => void;
 }
 
 export const MusicPlayer: React.FC<MusicPlayerProps> = ({
@@ -19,13 +20,14 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
   onNext,
   onPrev,
   autoSync,
-  onToggleAutoSync
+  onToggleAutoSync,
+  onOpenScanner
 }) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
-  const [volume, setVolume] = useState<number>(0.8);
+  const [volume, setVolume] = useState<number>(0.85);
   const [isMuted, setIsMuted] = useState<boolean>(false);
 
   useEffect(() => {
@@ -78,8 +80,8 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
 
   if (!track) {
     return (
-      <div className="glass-panel" style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-secondary)', borderRadius: '20px' }}>
-        <p>No track currently selected.</p>
+      <div className="glass-panel" style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+        <p>No track selected</p>
       </div>
     );
   }
@@ -87,10 +89,9 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
   return (
     <div className="glass-panel" style={{
       padding: '1.6rem',
-      borderRadius: '20px',
-      border: '1px solid rgba(255, 255, 255, 0.09)',
-      background: 'linear-gradient(180deg, rgba(18, 24, 38, 0.85), rgba(11, 15, 24, 0.95))',
-      boxShadow: '0 20px 40px -15px rgba(0, 0, 0, 0.6)'
+      borderRadius: '24px',
+      position: 'relative',
+      overflow: 'hidden'
     }}>
       
       <audio
@@ -100,62 +101,66 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
         onEnded={onNext}
       />
 
-      {/* Header Status Bar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+      {/* Top Meta Bar */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <span style={{
-            fontSize: '0.72rem',
+            fontSize: '0.75rem',
             fontWeight: 700,
-            padding: '0.22rem 0.65rem',
-            borderRadius: '8px',
-            background: `${accentColor}1C`,
-            border: `1px solid ${accentColor}44`,
+            padding: '0.25rem 0.75rem',
+            borderRadius: '20px',
+            background: `${accentColor}18`,
             color: accentColor,
-            letterSpacing: '0.04em',
-            textTransform: 'uppercase',
+            border: `1px solid ${accentColor}30`,
             display: 'flex',
             alignItems: 'center',
             gap: '0.35rem'
           }}>
-            <ShieldCheck size={12} />
-            <span>{currentMood} Matched Playlist</span>
+            <Sparkles size={12} />
+            <span>{currentMood} Mood Vibe</span>
+          </span>
+
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+            {track.bpm} BPM
           </span>
         </div>
 
-        <button
-          onClick={onToggleAutoSync}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: autoSync ? accentColor : 'var(--text-tertiary)',
-            fontSize: '0.75rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            transition: 'color 0.15s ease'
-          }}
-          title="Auto-synchronize player with sentiment scans"
-        >
-          <RefreshCw size={12} style={{ animation: autoSync ? 'spin 8s linear infinite' : 'none' }} />
-          <span>Auto Sentiment Sync</span>
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          {/* Auto Mood Sync Toggle */}
+          <button
+            onClick={onToggleAutoSync}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: autoSync ? accentColor : 'var(--text-tertiary)',
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem'
+            }}
+            title="Auto-switch songs when mood changes"
+          >
+            <RefreshCw size={12} style={{ animation: autoSync ? 'spin 8s linear infinite' : 'none' }} />
+            <span>Auto Sync</span>
+          </button>
+        </div>
       </div>
 
-      {/* Hero Track Info Row */}
+      {/* Main Track Display Row */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '1.4rem' }}>
         
-        {/* Album Artwork with Ambient Shadow */}
+        {/* Album Cover Art */}
         <div style={{
           position: 'relative',
-          width: '90px',
-          height: '90px',
-          borderRadius: '14px',
+          width: '100px',
+          height: '100px',
+          borderRadius: '18px',
           overflow: 'hidden',
-          boxShadow: `0 8px 24px ${accentColor}25, 0 4px 12px rgba(0, 0, 0, 0.5)`,
+          boxShadow: `0 10px 25px -5px ${accentColor}40`,
           flexShrink: 0,
-          border: '1px solid rgba(255, 255, 255, 0.1)'
+          border: '1px solid var(--border-subtle)'
         }}>
           <img src={track.coverUrl} alt={track.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           
@@ -163,7 +168,7 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
             <div style={{
               position: 'absolute',
               inset: 0,
-              background: 'rgba(0, 0, 0, 0.45)',
+              background: 'rgba(0, 0, 0, 0.35)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -178,10 +183,10 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
           )}
         </div>
 
-        {/* Metadata Details */}
+        {/* Title, Artist, Genre Info */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <h2 style={{
-            fontSize: '1.35rem',
+            fontSize: '1.4rem',
             fontWeight: 800,
             margin: 0,
             color: 'var(--text-primary)',
@@ -194,7 +199,7 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
           </h2>
 
           <p style={{
-            fontSize: '0.9rem',
+            fontSize: '0.95rem',
             color: 'var(--text-secondary)',
             margin: '0.2rem 0 0 0',
             whiteSpace: 'nowrap',
@@ -205,23 +210,23 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
             {track.artist}
           </p>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginTop: '0.4rem', fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.45rem' }}>
             <span style={{
-              padding: '0.12rem 0.45rem',
-              borderRadius: '6px',
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(255, 255, 255, 0.08)'
+              fontSize: '0.72rem',
+              padding: '0.15rem 0.55rem',
+              borderRadius: '8px',
+              background: 'var(--bg-surface-hover)',
+              color: 'var(--text-secondary)',
+              fontWeight: 600
             }}>
               {track.genre}
             </span>
-            <span>•</span>
-            <span>{track.bpm} BPM</span>
           </div>
         </div>
 
       </div>
 
-      {/* Progress & Duration Bar */}
+      {/* Track Progress Bar */}
       <div style={{ marginBottom: '1.25rem' }}>
         <input
           type="range"
@@ -231,22 +236,20 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
           onChange={handleSeek}
           style={{
             width: '100%',
-            accentColor: accentColor,
-            cursor: 'pointer',
-            height: '4px'
+            cursor: 'pointer'
           }}
         />
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '0.35rem', fontWeight: 500 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '0.35rem', fontWeight: 600 }}>
           <span>{formatTime(currentTime)}</span>
           <span>{formatTime(duration)}</span>
         </div>
       </div>
 
-      {/* Control Actions Row */}
+      {/* Control Buttons Bar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         
         {/* Volume Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', width: '120px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', width: '110px' }}>
           <button
             onClick={() => {
               if (audioRef.current) {
@@ -257,7 +260,7 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
             style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
             title={isMuted ? "Unmute" : "Mute"}
           >
-            {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+            {isMuted ? <VolumeX size={17} /> : <Volume2 size={17} />}
           </button>
           <input
             type="range"
@@ -266,27 +269,30 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
             step={0.05}
             value={isMuted ? 0 : volume}
             onChange={handleVolumeChange}
-            style={{ width: '70px', accentColor: accentColor }}
+            style={{ width: '65px' }}
           />
         </div>
 
-        {/* Playback Controls: Prev, Play/Pause, Next */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+        {/* Playback Controls (Previous, Play/Pause, Next) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.1rem' }}>
           <button
             onClick={onPrev}
             style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--text-secondary)',
+              background: 'var(--bg-surface-hover)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: '50%',
+              width: '38px',
+              height: '38px',
+              color: 'var(--text-primary)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              transition: 'color 0.15s ease'
+              transition: 'transform 0.1s ease'
             }}
             title="Previous Track"
           >
-            <SkipBack size={19} />
+            <SkipBack size={17} />
           </button>
 
           <button
@@ -295,42 +301,63 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
               background: accentColor,
               border: 'none',
               borderRadius: '50%',
-              width: '48px',
-              height: '48px',
+              width: '52px',
+              height: '52px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#090C13',
+              color: '#FFFFFF',
               cursor: 'pointer',
-              boxShadow: `0 6px 20px ${accentColor}50`,
+              boxShadow: `0 6px 20px ${accentColor}55`,
               transition: 'transform 0.15s ease'
             }}
             title={isPlaying ? "Pause" : "Play"}
           >
-            {isPlaying ? <Pause size={20} /> : <Play size={20} style={{ marginLeft: '2px' }} />}
+            {isPlaying ? <Pause size={22} /> : <Play size={22} style={{ marginLeft: '2px' }} />}
           </button>
 
           <button
             onClick={onNext}
             style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--text-secondary)',
+              background: 'var(--bg-surface-hover)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: '50%',
+              width: '38px',
+              height: '38px',
+              color: 'var(--text-primary)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              transition: 'color 0.15s ease'
+              transition: 'transform 0.1s ease'
             }}
             title="Next Track"
           >
-            <SkipForward size={19} />
+            <SkipForward size={17} />
           </button>
         </div>
 
-        {/* Track Format Tag */}
-        <div style={{ width: '120px', textAlign: 'right', fontSize: '0.72rem', color: 'var(--text-tertiary)', fontWeight: 500 }}>
-          HQ Audio 320kbps
+        {/* Quick Detect Button in Player */}
+        <div style={{ width: '110px', textAlign: 'right' }}>
+          <button
+            onClick={onOpenScanner}
+            style={{
+              background: 'none',
+              border: `1px solid ${accentColor}40`,
+              padding: '0.35rem 0.65rem',
+              borderRadius: '10px',
+              color: accentColor,
+              fontSize: '0.74rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.3rem'
+            }}
+          >
+            <Camera size={13} />
+            <span>Scan</span>
+          </button>
         </div>
 
       </div>
