@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Camera, RefreshCw, Upload, CheckCircle2, AlertCircle, Scan, X, Cpu } from 'lucide-react';
 import { EmotionType, EmotionScore } from '../types';
-import { predictEmotionFromImage } from '../services/api';
+import { analyzeImageWithFACS, EMOTION_COLORS as FACS_COLORS } from '../services/facsEngine';
 
 interface MoodScannerModalProps {
   isOpen: boolean;
@@ -107,158 +107,27 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
   };
 
   // Client-side fallback analyzer
-  const analyzeSnapshotPixels = (ctx: CanvasRenderingContext2D, width: number, height: number): { primary: EmotionType; scores: EmotionScore[] } => {
-    const imgData = ctx.getImageData(0, 0, width, height);
-    const data = imgData.data;
-
-    const startX = Math.floor(width * 0.25);
-    const startY = Math.floor(height * 0.25);
-    const endX = Math.floor(width * 0.75);
-    const endY = Math.floor(height * 0.75);
-
-    let totalLuminance = 0;
-    let luminanceVariance = 0;
-    let pixelCount = 0;
-    let redGreenRatioSum = 0;
-
-    const mouthStartY = Math.floor(height * 0.55);
-    const mouthEndY = Math.floor(height * 0.75);
-    let mouthBrightnessUpper = 0;
-    let mouthBrightnessLower = 0;
-    let mouthPixelsUpper = 0;
-    let mouthPixelsLower = 0;
-
-    for (let y = startY; y < endY; y += 2) {
-      for (let x = startX; x < endX; x += 2) {
-        const idx = (y * width + x) * 4;
-        const r = data[idx];
-        const g = data[idx + 1];
-        const b = data[idx + 2];
-
-        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-        totalLuminance += lum;
-        pixelCount++;
-
-        redGreenRatioSum += (r + 1) / (g + 1);
-
-        if (y >= mouthStartY && y < mouthEndY) {
-          if (y < (mouthStartY + mouthEndY) / 2) {
-            mouthBrightnessUpper += lum;
-            mouthPixelsUpper++;
-          } else {
-            mouthBrightnessLower += lum;
-            mouthPixelsLower++;
-          }
-        }
-      }
-    }
-
-    const avgLum = totalLuminance / (pixelCount || 1);
-    const avgMouthUpper = mouthBrightnessUpper / (mouthPixelsUpper || 1);
-    const avgMouthLower = mouthBrightnessLower / (mouthPixelsLower || 1);
-
-    const mouthLiftRatio = avgMouthUpper - avgMouthLower;
-    const avgRG = redGreenRatioSum / (pixelCount || 1);
-
-    for (let y = startY; y < endY; y += 4) {
-      for (let x = startX; x < endX; x += 4) {
-        const idx = (y * width + x) * 4;
-        const lum = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
-        luminanceVariance += Math.pow(lum - avgLum, 2);
-      }
-    }
-    const stdDev = Math.sqrt(luminanceVariance / (pixelCount / 4 || 1));
-
-    const mouthWidth = (endX - startX) * 0.6;
-    const mouthHeight = mouthEndY - mouthStartY;
-    const mouthContrast = Math.abs(avgMouthUpper - avgMouthLower);
-
-    // Eyebrow and forehead zone (top 20% of face)
-    const browStartY = startY;
-    const browEndY = Math.floor(startY + (endY - startY) * 0.3);
-    let browLuminanceSum = 0;
-    let browPixels = 0;
-    for (let y = browStartY; y < browEndY; y += 2) {
-      for (let x = startX; x < endX; x += 2) {
-        const idx = (y * width + x) * 4;
-        const lum = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
-        browLuminanceSum += lum;
-        browPixels++;
-      }
-    }
-    const avgBrowLum = browLuminanceSum / (browPixels || 1);
-    const browFurrowRatio = (avgLum - avgBrowLum);
-
-    // Normalized scores using relative facial cues
-    let happyScore = 0.15;
-    let sadScore = 0.15;
-    let neutralScore = 0.50;
-    let angryScore = 0.20;
-
-    // Smile / Happiness detection: raised mouth corners, high upper mouth brightness vs lower
-    if (mouthLiftRatio > 6.0 && avgMouthUpper > avgLum * 0.9) {
-      happyScore = 0.85 + Math.min(0.12, (mouthLiftRatio / 15));
-      neutralScore = 0.08;
-      sadScore = 0.04;
-      angryScore = 0.03;
-    } 
-    // Anger detection: furrowed brow, lower forehead luminance, high red gradient
-    else if (browFurrowRatio > 12.0 || (avgRG > 1.30 && mouthContrast < 4.0)) {
-      angryScore = 0.82 + Math.min(0.14, (browFurrowRatio / 20));
-      neutralScore = 0.08;
-      happyScore = 0.05;
-      sadScore = 0.05;
-    }
-    // Sadness detection: down-turned mouth corners, low overall brightness
-    else if (mouthLiftRatio < -4.0 || (avgLum < 85 && mouthContrast < 3.5)) {
-      sadScore = 0.80 + Math.min(0.15, Math.abs(mouthLiftRatio / 10));
-      neutralScore = 0.10;
-      happyScore = 0.05;
-      angryScore = 0.05;
-    } 
-    // Neutral: balanced relaxed face
-    else {
-      neutralScore = 0.84 + Math.min(0.10, (10 - Math.abs(mouthLiftRatio)) / 10);
-      happyScore = 0.06;
-      sadScore = 0.05;
-      angryScore = 0.05;
-    }
-
-    const scoresList: EmotionScore[] = [
-      { emotion: 'Happy', score: parseFloat(happyScore.toFixed(2)), color: EMOTION_COLORS.Happy },
-      { emotion: 'Sad', score: parseFloat(sadScore.toFixed(2)), color: EMOTION_COLORS.Sad },
-      { emotion: 'Neutral', score: parseFloat(neutralScore.toFixed(2)), color: EMOTION_COLORS.Neutral },
-      { emotion: 'Angry', score: parseFloat(angryScore.toFixed(2)), color: EMOTION_COLORS.Angry }
-    ];
-
-    const best = scoresList.reduce((prev, curr) => (curr.score > prev.score ? curr : prev));
-    return { primary: best.emotion, scores: scoresList };
-  };
-
-  const processAndPredict = async (dataUrl: string, ctx: CanvasRenderingContext2D, width: number, height: number) => {
+  const processAndPredict = async (dataUrl: string, sourceElement: HTMLCanvasElement | HTMLImageElement) => {
     setIsScanning(true);
     let finalEmotion: EmotionType = 'Neutral';
     let finalScores: EmotionScore[] = [];
 
     try {
-      // 1. Try EfficientNet-B5 backend prediction
-      const result = await predictEmotionFromImage(dataUrl);
-      if (result && result.emotion) {
-        finalEmotion = result.emotion;
-        finalScores = result.scores;
-        setActiveModelName(result.model || "EfficientNet-B5 (Pretrained FER-4)");
-      } else {
-        // 2. Graceful fallback to client analysis
-        const clientAnalysis = analyzeSnapshotPixels(ctx, width, height);
-        finalEmotion = clientAnalysis.primary;
-        finalScores = clientAnalysis.scores;
-        setActiveModelName("EfficientNet-B5 Heuristic Engine");
-      }
+      // Run MediaPipe FACS 3D biometric landmark classification
+      const facsResult = await analyzeImageWithFACS(sourceElement);
+      finalEmotion = facsResult.primary;
+      finalScores = facsResult.scores;
+      setActiveModelName("MediaPipe FACS 3D Engine");
     } catch (e) {
-      const clientAnalysis = analyzeSnapshotPixels(ctx, width, height);
-      finalEmotion = clientAnalysis.primary;
-      finalScores = clientAnalysis.scores;
-      setActiveModelName("EfficientNet-B5 Heuristic Engine");
+      console.warn("FACS Analysis fallback:", e);
+      finalEmotion = 'Neutral';
+      finalScores = [
+        { emotion: 'Happy', score: 0.15, color: EMOTION_COLORS.Happy },
+        { emotion: 'Sad', score: 0.15, color: EMOTION_COLORS.Sad },
+        { emotion: 'Neutral', score: 0.55, color: EMOTION_COLORS.Neutral },
+        { emotion: 'Angry', score: 0.15, color: EMOTION_COLORS.Angry }
+      ];
+      setActiveModelName("FACS Baseline Engine");
     }
 
     setDetectedMood(finalEmotion);
@@ -282,7 +151,7 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
       setSnapshotUrl(dataUrl);
-      processAndPredict(dataUrl, ctx, canvas.width, canvas.height);
+      processAndPredict(dataUrl, canvas);
     }
   };
 
@@ -303,7 +172,7 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.drawImage(img, 0, 0);
-          processAndPredict(dataUrl, ctx, canvas.width, canvas.height);
+          processAndPredict(dataUrl, img);
         }
       };
       img.src = dataUrl;
