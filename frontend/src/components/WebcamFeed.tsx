@@ -91,7 +91,7 @@ export const WebcamFeed: React.FC<WebcamFeedProps> = ({ onEmotionDetect, accentC
         if (!isMounted) return;
         setMeshLoaded(true);
 
-        faceMesh.onResults((results) => {
+        faceMesh.onResults((results: any) => {
           if (!isMounted || !canvasRef.current || !videoRef.current) return;
 
           const canvas = canvasRef.current;

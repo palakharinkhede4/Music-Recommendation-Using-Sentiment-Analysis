@@ -9,7 +9,7 @@
  * - Baseline Equilibrium: Neutral
  */
 
-import { FaceMesh, Results, NormalizedLandmarkList } from '@mediapipe/face_mesh';
+import { FaceMesh as FaceMeshModule, Results, NormalizedLandmarkList } from '@mediapipe/face_mesh';
 
 export type EmotionType = 'Happy' | 'Sad' | 'Neutral' | 'Angry';
 
@@ -228,18 +228,18 @@ export function classifyFACSEmotion(au: ActionUnitMetrics, applySmoothing = true
 /**
  * Singleton MediaPipe FaceMesh Instance Manager
  */
-let faceMeshInstance: FaceMesh | null = null;
-let isInitializing = false;
-let initPromise: Promise<FaceMesh> | null = null;
+let faceMeshInstance: any = null;
+let initPromise: Promise<any> | null = null;
 
-export async function getFaceMeshInstance(): Promise<FaceMesh> {
+export async function getFaceMeshInstance(): Promise<any> {
   if (faceMeshInstance) return faceMeshInstance;
   if (initPromise) return initPromise;
 
   initPromise = (async () => {
-    isInitializing = true;
-    const mesh = new FaceMesh({
-      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+    // Check global CDN FaceMesh first, fallback to module FaceMesh
+    const FaceMeshClass = (window as any).FaceMesh || FaceMeshModule;
+    const mesh = new FaceMeshClass({
+      locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/${file}`
     });
 
     mesh.setOptions({
@@ -251,7 +251,6 @@ export async function getFaceMeshInstance(): Promise<FaceMesh> {
 
     await mesh.initialize();
     faceMeshInstance = mesh;
-    isInitializing = false;
     return mesh;
   })();
 
@@ -265,9 +264,40 @@ export async function analyzeImageWithFACS(inputElement: HTMLCanvasElement | HTM
   const mesh = await getFaceMeshInstance();
 
   return new Promise<FACSPrediction>((resolve) => {
+    let resolved = false;
+
+    // Timeout safety fallback (2.5s)
+    const timeout = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        resolve({
+          primary: 'Neutral',
+          confidence: 0.75,
+          scores: [
+            { emotion: 'Happy', score: 0.10, color: EMOTION_COLORS.Happy },
+            { emotion: 'Sad', score: 0.10, color: EMOTION_COLORS.Sad },
+            { emotion: 'Neutral', score: 0.70, color: EMOTION_COLORS.Neutral },
+            { emotion: 'Angry', score: 0.10, color: EMOTION_COLORS.Angry }
+          ],
+          actionUnits: {
+            au12_smile: 0,
+            au4_brow_furrow: 0,
+            au15_lip_depress: 0,
+            au1_inner_brow_raise: 0,
+            au25_lip_part: 0,
+            faceScale: 0
+          },
+          landmarksDetected: false
+        });
+      }
+    }, 2500);
+
     const handleResults = (results: Results) => {
+      if (resolved) return;
+      resolved = true;
+      clearTimeout(timeout);
+
       if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
-        // No face detected -> Return neutral resting fallback
         resolve({
           primary: 'Neutral',
           confidence: 0.65,
