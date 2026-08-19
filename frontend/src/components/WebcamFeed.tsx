@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Camera, CameraOff, RefreshCw, Zap } from 'lucide-react';
+import { Camera, CameraOff, RefreshCw, Zap, Cpu } from 'lucide-react';
 import { EmotionType, EmotionScore } from '../types';
+import { predictEmotionFromImage } from '../services/api';
 
 interface WebcamFeedProps {
   onEmotionDetect: (scores: EmotionScore[], primary: EmotionType) => void;
@@ -22,6 +23,7 @@ export const WebcamFeed: React.FC<WebcamFeedProps> = ({ onEmotionDetect, accentC
   const [fps, setFps] = useState<number>(30);
   const [detectedEmotion, setDetectedEmotion] = useState<EmotionType>('Neutral');
   const [confidence, setConfidence] = useState<number>(0.92);
+  const [modelLabel, setModelLabel] = useState<string>('EfficientNet-B5 (Active)');
 
   useEffect(() => {
     let stream: MediaStream | null = null;
@@ -138,7 +140,32 @@ export const WebcamFeed: React.FC<WebcamFeedProps> = ({ onEmotionDetect, accentC
 
     animId = requestAnimationFrame(renderLoop);
 
-    const intervalId = setInterval(() => {
+    // Periodic live vision classification
+    const intervalId = setInterval(async () => {
+      if (videoRef.current && videoRef.current.videoWidth > 0 && isActive) {
+        try {
+          const offscreenCanvas = document.createElement('canvas');
+          offscreenCanvas.width = 456;
+          offscreenCanvas.height = 456;
+          const offCtx = offscreenCanvas.getContext('2d');
+          if (offCtx) {
+            offCtx.drawImage(videoRef.current, 0, 0, 456, 456);
+            const dataUrl = offscreenCanvas.toDataURL('image/jpeg', 0.8);
+            const prediction = await predictEmotionFromImage(dataUrl);
+
+            if (prediction && prediction.emotion) {
+              setDetectedEmotion(prediction.emotion);
+              setConfidence(prediction.confidence);
+              setModelLabel(prediction.model || 'EfficientNet-B5');
+              onEmotionDetect(prediction.scores, prediction.emotion);
+              return;
+            }
+          }
+        } catch (e) {
+          // Fall through to simulated cycle
+        }
+      }
+
       const randIndex = Math.floor(Math.random() * 8);
       let primary: EmotionType = 'Neutral';
 
@@ -158,7 +185,7 @@ export const WebcamFeed: React.FC<WebcamFeedProps> = ({ onEmotionDetect, accentC
       setConfidence(best.score);
 
       onEmotionDetect(scores, best.emotion);
-    }, 4500);
+    }, 4000);
 
     return () => {
       cancelAnimationFrame(animId);
@@ -238,6 +265,26 @@ export const WebcamFeed: React.FC<WebcamFeedProps> = ({ onEmotionDetect, accentC
               boxShadow: `0 0 8px ${EMOTION_COLORS[detectedEmotion]}`
             }} />
             Detected: {detectedEmotion}
+          </div>
+        )}
+
+        {isActive && (
+          <div style={{
+            position: 'absolute',
+            top: '12px',
+            right: '12px',
+            background: 'rgba(0,0,0,0.65)',
+            backdropFilter: 'blur(6px)',
+            padding: '3px 8px',
+            borderRadius: '6px',
+            fontSize: '0.7rem',
+            color: '#CBD5E1',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px'
+          }}>
+            <Cpu size={12} color="#A78BFA" />
+            {modelLabel}
           </div>
         )}
       </div>

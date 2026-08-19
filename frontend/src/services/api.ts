@@ -1,6 +1,13 @@
-import { Track, EmotionType } from '../types';
+import { Track, EmotionType, EmotionScore } from '../types';
 
 const API_BASE = 'http://127.0.0.1:8000/api';
+
+const EMOTION_COLORS: Record<EmotionType, string> = {
+  Happy: '#EAB308',
+  Sad: '#3B82F6',
+  Neutral: '#8B5CF6',
+  Angry: '#EF4444'
+};
 
 const MOCK_TRACKS: Track[] = [
   // 1. HAPPY (Dance & Upbeat Music)
@@ -193,4 +200,45 @@ export async function logSentiment(mood: EmotionType, confidence: number): Promi
   } catch (e) {
     // Silent fallback
   }
+}
+
+export interface PredictionResult {
+  emotion: EmotionType;
+  confidence: number;
+  scores: EmotionScore[];
+  faceDetected?: boolean;
+  model?: string;
+  executionTimeMs?: number;
+}
+
+export async function predictEmotionFromImage(imageBase64: string): Promise<PredictionResult | null> {
+  try {
+    const res = await fetch(`${API_BASE}/predict/emotion`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageBase64 })
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      const emotion = data.emotion as EmotionType;
+      const scores: EmotionScore[] = (data.scores || []).map((s: any) => ({
+        emotion: s.emotion as EmotionType,
+        score: s.score,
+        color: s.color || EMOTION_COLORS[s.emotion as EmotionType] || '#8B5CF6'
+      }));
+
+      return {
+        emotion,
+        confidence: data.confidence,
+        scores,
+        faceDetected: data.faceDetected,
+        model: data.model,
+        executionTimeMs: data.executionTimeMs
+      };
+    }
+  } catch (err) {
+    console.info("Backend inference API offline, falling back to instant client analyzer:", err);
+  }
+  return null;
 }

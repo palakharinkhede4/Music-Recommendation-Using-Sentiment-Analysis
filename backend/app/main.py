@@ -1,20 +1,25 @@
 """
 FastAPI Backend Server for Music Recommendation Using Sentiment Analysis
-Serves track recommendations, handles mood history analytics, and emotion prediction API endpoints.
+Serves track recommendations, handles mood history analytics, and hosts real-time EfficientNet-B5 FER emotion prediction.
 """
 
 import os
 import json
 import random
-from typing import List, Optional
-from fastapi import FastAPI, Query, HTTPException
+from typing import List, Optional, Dict, Any
+from fastapi import FastAPI, Query, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+try:
+    from app.ml_service import get_emotion_predictor
+except ImportError:
+    from backend.app.ml_service import get_emotion_predictor
+
 app = FastAPI(
     title="Sentiment Music Recommendation API",
-    description="Backend service providing emotion-driven track recommendations and mood analytics.",
-    version="2.0.0"
+    description="Backend service providing EfficientNet-B5 emotion-driven track recommendations and mood analytics.",
+    version="2.1.0"
 )
 
 # Enable CORS for local development and frontend client
@@ -54,30 +59,46 @@ class SentimentLog(BaseModel):
     confidence: float
     timestamp: Optional[str] = None
 
+class EmotionPredictRequest(BaseModel):
+    imageBase64: str
+
 # In-Memory Mood Session Log
 session_mood_history = [
     {"mood": "Happy", "count": 12},
     {"mood": "Neutral", "count": 18},
     {"mood": "Sad", "count": 4},
-    {"mood": "Surprise", "count": 6},
     {"mood": "Angry", "count": 2}
 ]
 
 @app.get("/")
 def read_root():
+    predictor = get_emotion_predictor()
     return {
         "status": "online",
         "service": "Music Recommendation Using Sentiment Analysis",
-        "version": "2.0.0",
+        "version": "2.1.0",
+        "model": {
+            "name": "EfficientNet-B5",
+            "classes": ["angry", "happy", "neutral", "sad"],
+            "isLoaded": predictor.is_loaded,
+            "device": str(predictor.device)
+        },
         "docs": "/docs"
     }
 
 @app.get("/api/health")
 def health_check():
-    return {"status": "healthy", "tracksCount": len(get_all_tracks())}
+    predictor = get_emotion_predictor()
+    return {
+        "status": "healthy",
+        "tracksCount": len(get_all_tracks()),
+        "modelLoaded": predictor.is_loaded,
+        "modelName": "EfficientNet-B5 FER4",
+        "device": str(predictor.device)
+    }
 
 @app.get("/api/tracks", response_model=List[Track])
-def get_tracks(mood: Optional[str] = Query(None, description="Filter tracks by emotion (Happy, Sad, Neutral, Angry, Surprise)")):
+def get_tracks(mood: Optional[str] = Query(None, description="Filter tracks by emotion (Happy, Sad, Neutral, Angry)")):
     tracks = get_all_tracks()
     if mood:
         mood_clean = mood.capitalize()
@@ -101,13 +122,42 @@ def get_recommendations(mood: str = Query("Neutral", description="Current user e
     result = matching + other
     return result
 
+@app.post("/api/predict/emotion")
+async def predict_emotion(req: EmotionPredictRequest):
+    """
+    Predicts facial emotion from base64 image using EfficientNet-B5 model.
+    """
+    predictor = get_emotion_predictor()
+    try:
+        res = predictor.predict_base64(req.imageBase64)
+        return res
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Image processing failed: {str(e)}")
+
+@app.post("/api/predict/emotion-upload")
+async def predict_emotion_upload(file: UploadFile = File(...)):
+    """
+    Predicts facial emotion from uploaded multipart image file.
+    """
+    predictor = get_emotion_predictor()
+    try:
+        contents = await file.read()
+        res = predictor.predict_bytes(contents)
+        return res
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"File processing failed: {str(e)}")
+
 @app.post("/api/sentiment/log")
 def log_sentiment(log: SentimentLog):
     mood_name = log.mood.capitalize()
+    found = False
     for item in session_mood_history:
         if item["mood"] == mood_name:
             item["count"] += 1
+            found = True
             break
+    if not found:
+        session_mood_history.append({"mood": mood_name, "count": 1})
     return {"status": "logged", "currentMood": mood_name, "history": session_mood_history}
 
 @app.get("/api/analytics/moods")

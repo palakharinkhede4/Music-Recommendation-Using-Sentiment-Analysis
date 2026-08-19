@@ -8,15 +8,22 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Python & ML
+# Python & ML Environments
 __pycache__/
 *.pyc
 *.pyo
 .venv/
 env/
 venv/
-*.pth
-*.onnx
+
+# Intermediate / Run Datasets
+ml_engine/train/
+ml_engine/validation/
+ml_engine/train_faces/
+ml_engine/validation_faces/
+ml_engine/dataset/
+ml_engine/last_*.pth
+ml_engine/preprocess_report.json
 
 # Vercel
 .vercel/
