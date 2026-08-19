@@ -169,31 +169,59 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
     }
     const stdDev = Math.sqrt(luminanceVariance / (pixelCount / 4 || 1));
 
-    let happyScore = 0.2;
-    let neutralScore = 0.3;
-    let sadScore = 0.25;
-    let angryScore = 0.25;
+    const mouthWidth = (endX - startX) * 0.6;
+    const mouthHeight = mouthEndY - mouthStartY;
+    const mouthContrast = Math.abs(avgMouthUpper - avgMouthLower);
 
-    if (mouthLiftRatio > 3.0 || stdDev > 45) {
-      happyScore = 0.82 + Math.min(0.12, (mouthLiftRatio / 10));
-      neutralScore = 0.10;
+    // Eyebrow and forehead zone (top 20% of face)
+    const browStartY = startY;
+    const browEndY = Math.floor(startY + (endY - startY) * 0.3);
+    let browLuminanceSum = 0;
+    let browPixels = 0;
+    for (let y = browStartY; y < browEndY; y += 2) {
+      for (let x = startX; x < endX; x += 2) {
+        const idx = (y * width + x) * 4;
+        const lum = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
+        browLuminanceSum += lum;
+        browPixels++;
+      }
+    }
+    const avgBrowLum = browLuminanceSum / (browPixels || 1);
+    const browFurrowRatio = (avgLum - avgBrowLum);
+
+    // Normalized scores using relative facial cues
+    let happyScore = 0.15;
+    let sadScore = 0.15;
+    let neutralScore = 0.50;
+    let angryScore = 0.20;
+
+    // Smile / Happiness detection: raised mouth corners, high upper mouth brightness vs lower
+    if (mouthLiftRatio > 6.0 && avgMouthUpper > avgLum * 0.9) {
+      happyScore = 0.85 + Math.min(0.12, (mouthLiftRatio / 15));
+      neutralScore = 0.08;
       sadScore = 0.04;
-      angryScore = 0.04;
-    } else if (avgLum < 75 || avgRG > 1.35) {
-      angryScore = 0.78 + Math.min(0.15, (avgRG - 1.2));
+      angryScore = 0.03;
+    } 
+    // Anger detection: furrowed brow, lower forehead luminance, high red gradient
+    else if (browFurrowRatio > 12.0 || (avgRG > 1.30 && mouthContrast < 4.0)) {
+      angryScore = 0.82 + Math.min(0.14, (browFurrowRatio / 20));
+      neutralScore = 0.08;
       happyScore = 0.05;
-      sadScore = 0.12;
-      neutralScore = 0.05;
-    } else if (mouthLiftRatio < -1.5 || stdDev < 28) {
-      sadScore = 0.76 + Math.min(0.14, Math.abs(mouthLiftRatio / 5));
+      sadScore = 0.05;
+    }
+    // Sadness detection: down-turned mouth corners, low overall brightness
+    else if (mouthLiftRatio < -4.0 || (avgLum < 85 && mouthContrast < 3.5)) {
+      sadScore = 0.80 + Math.min(0.15, Math.abs(mouthLiftRatio / 10));
+      neutralScore = 0.10;
+      happyScore = 0.05;
+      angryScore = 0.05;
+    } 
+    // Neutral: balanced relaxed face
+    else {
+      neutralScore = 0.84 + Math.min(0.10, (10 - Math.abs(mouthLiftRatio)) / 10);
       happyScore = 0.06;
-      neutralScore = 0.12;
-      angryScore = 0.06;
-    } else {
-      neutralScore = 0.80 + Math.min(0.12, (35 / (stdDev + 1)));
-      happyScore = 0.08;
-      sadScore = 0.06;
-      angryScore = 0.06;
+      sadScore = 0.05;
+      angryScore = 0.05;
     }
 
     const scoresList: EmotionScore[] = [
