@@ -1,12 +1,12 @@
 /**
- * Real-Time Facial Action Coding System (FACS) Biometric Engine
- * Uses MediaPipe 468 3D Landmark Geometry for Invariant Facial Sentiment Recognition
+ * High-Precision Facial Action Coding System (FACS) Biometric Engine
+ * Calibrated for Natural Expressions, Glasses, and Diverse Lighting
  * 
- * Based on Paul Ekman's Facial Action Coding System:
- * - AU12 (Zygomaticus Major / Lip Corner Puller): Smile / Happy
- * - AU4  (Corrugator Supercilii / Brow Lowerer): Brow Furrow / Angry
- * - AU15 (Depressor Anguli Oris) + AU1 (Inner Brow Raiser): Frown / Sad
- * - Baseline Equilibrium: Neutral
+ * Based on Paul Ekman's FACS:
+ * - Happy: Mouth widening (W_mouth > 0.88 * Eye_Dist), mouth corner elevation, cheek raising
+ * - Angry: Inter-eyebrow horizontal contraction, angry brow slant (inner brows lower than outer), narrow mouth
+ * - Sad: Lip corner depression (corners lower than bottom lip), sad brow slant (inner brows raised), narrow mouth
+ * - Neutral: Resting baseline equilibrium
  */
 
 import { FaceMesh as FaceMeshModule, Results, NormalizedLandmarkList } from '@mediapipe/face_mesh';
@@ -14,12 +14,12 @@ import { FaceMesh as FaceMeshModule, Results, NormalizedLandmarkList } from '@me
 export type EmotionType = 'Happy' | 'Sad' | 'Neutral' | 'Angry';
 
 export interface ActionUnitMetrics {
-  au12_smile: number;          // Lip corner puller & elevator [0..1]
-  au4_brow_furrow: number;     // Eyebrow contraction & descent [0..1]
-  au15_lip_depress: number;    // Mouth corner depression [0..1]
-  au1_inner_brow_raise: number;// Inner brow elevation [0..1]
-  au25_lip_part: number;       // Mouth opening / jaw descent [0..1]
-  faceScale: number;           // Inter-facial vertical scale [px]
+  au12_smile: number;          // Lip corner puller & width expansion [0..1]
+  au4_brow_furrow: number;     // Eyebrow inward contraction & downward slant [0..1]
+  au15_lip_depress: number;    // Mouth corner downward depression [0..1]
+  au1_inner_brow_raise: number;// Inner brow elevation / distress [0..1]
+  mouthWidthRatio: number;     // Mouth width normalized to inter-ocular distance
+  eyeDistance: number;         // Inter-ocular distance
 }
 
 export interface FACSPrediction {
@@ -38,181 +38,172 @@ export const EMOTION_COLORS: Record<EmotionType, string> = {
   Angry: '#ef4444'     // Rose / Red
 };
 
-// Rolling Exponential Moving Average (EMA) state for smooth transitions
-let smoothedScores: Record<EmotionType, number> = {
-  Happy: 0.25,
-  Sad: 0.25,
-  Neutral: 0.25,
-  Angry: 0.25
-};
-
-const EMA_ALPHA = 0.40; // 40% current frame, 60% historical for jitter-free stability
-
 /**
  * Key MediaPipe Landmark Indices (468 3D points)
  */
 export const LANDMARK_INDEX = {
-  // Forehead & Chin (Face vertical scale)
+  // Eyes
+  LEFT_EYE_OUTER: 33,
+  LEFT_EYE_INNER: 133,
+  RIGHT_EYE_INNER: 362,
+  RIGHT_EYE_OUTER: 263,
+  LEFT_EYE_TOP: 159,
+  RIGHT_EYE_TOP: 386,
+
+  // Forehead & Chin
   FOREHEAD_TOP: 10,
   CHIN_BOTTOM: 152,
-  
-  // Nose
   NOSE_TIP: 1,
-  GLABELLA_MID_BROW: 9,
 
   // Mouth
   MOUTH_LEFT_CORNER: 61,
   MOUTH_RIGHT_CORNER: 291,
   UPPER_LIP_CENTER: 13,
   LOWER_LIP_CENTER: 14,
-  UPPER_LIP_TOP: 0,
   LOWER_LIP_BOTTOM: 17,
 
   // Eyebrows
   LEFT_EYEBROW_INNER: 55,
-  LEFT_EYEBROW_MID: 107,
   LEFT_EYEBROW_OUTER: 70,
   RIGHT_EYEBROW_INNER: 285,
-  RIGHT_EYEBROW_MID: 336,
   RIGHT_EYEBROW_OUTER: 300,
-
-  // Eyes (for vertical alignment and brow-to-eye distance)
-  LEFT_EYE_TOP: 159,
-  LEFT_EYE_BOTTOM: 145,
-  RIGHT_EYE_TOP: 386,
-  RIGHT_EYE_BOTTOM: 374,
 
   // Cheeks
   LEFT_CHEEK: 116,
   RIGHT_CHEEK: 345
 };
 
-/**
- * Calculate Euclidean 2D distance between two landmarks
- */
 function dist2D(p1: { x: number; y: number }, p2: { x: number; y: number }): number {
   return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
 }
 
 /**
- * Compute FACS Action Unit Metrics from 468 3D Normalized Landmarks
+ * Extract High-Precision Facial Action Unit Metrics
  */
 export function computeActionUnits(landmarks: NormalizedLandmarkList): ActionUnitMetrics {
   const p = (idx: number) => landmarks[idx] || { x: 0, y: 0, z: 0 };
 
-  // 1. Vertical Face Height Scale (Chin to Forehead Top)
-  const faceScale = dist2D(p(LANDMARK_INDEX.CHIN_BOTTOM), p(LANDMARK_INDEX.FOREHEAD_TOP)) || 0.001;
+  // 1. Inter-Ocular Reference Distance (Distance between outer eye corners)
+  const eyeDistance = dist2D(p(LANDMARK_INDEX.LEFT_EYE_OUTER), p(LANDMARK_INDEX.RIGHT_EYE_OUTER)) || 0.1;
+  const faceHeight = dist2D(p(LANDMARK_INDEX.CHIN_BOTTOM), p(LANDMARK_INDEX.FOREHEAD_TOP)) || 0.2;
 
-  // 2. AU12: Zygomaticus Major (Mouth Corner Elevation & Width Expansion)
-  const mouthWidth = dist2D(p(LANDMARK_INDEX.MOUTH_LEFT_CORNER), p(LANDMARK_INDEX.MOUTH_RIGHT_CORNER)) / faceScale;
-  const mouthCornersAvgY = (p(LANDMARK_INDEX.MOUTH_LEFT_CORNER).y + p(LANDMARK_INDEX.MOUTH_RIGHT_CORNER).y) / 2;
-  const upperLipCenterY = p(LANDMARK_INDEX.UPPER_LIP_CENTER).y;
-  // In screen coordinates, y increases downward. If corners are higher than lip center, (lipCenter.y - corners.y) > 0
-  const cornerLift = (upperLipCenterY - mouthCornersAvgY) / faceScale;
+  // 2. Mouth Geometry (Width & Corner Lift)
+  const rawMouthWidth = dist2D(p(LANDMARK_INDEX.MOUTH_LEFT_CORNER), p(LANDMARK_INDEX.MOUTH_RIGHT_CORNER));
+  const mouthWidthRatio = rawMouthWidth / eyeDistance; // In smiles, mouth width expands from ~0.75 to >0.92
 
-  // AU12 formula: scaled combination of corner elevation and mouth stretch
-  const au12_raw = (cornerLift * 18.0) + ((mouthWidth - 0.45) * 4.0);
+  const leftCorner = p(LANDMARK_INDEX.MOUTH_LEFT_CORNER);
+  const rightCorner = p(LANDMARK_INDEX.MOUTH_RIGHT_CORNER);
+  const upperLipCenter = p(LANDMARK_INDEX.UPPER_LIP_CENTER);
+  const lowerLipCenter = p(LANDMARK_INDEX.LOWER_LIP_CENTER);
+  const mouthCenterY = (upperLipCenter.y + lowerLipCenter.y) / 2;
+
+  // In screen space (y increases downward):
+  // If corners are elevated above the mouth center: (mouthCenterY - corner.y) > 0
+  const leftCornerLift = (mouthCenterY - leftCorner.y) / eyeDistance;
+  const rightCornerLift = (mouthCenterY - rightCorner.y) / eyeDistance;
+  const avgCornerLift = (leftCornerLift + rightCornerLift) / 2;
+
+  // AU12 (Smile): Combines mouth widening and upward corner angle
+  const widthBonus = Math.max(0, (mouthWidthRatio - 0.80) * 4.5);
+  const liftBonus = Math.max(0, (avgCornerLift + 0.01) * 12.0);
+  const au12_raw = (widthBonus * 0.65) + (liftBonus * 0.35);
   const au12_smile = Math.max(0, Math.min(1, au12_raw));
 
-  // 3. AU4: Corrugator Supercilii (Eyebrow Inward Pull & Lowering / Furrow)
-  const browDistance = dist2D(p(LANDMARK_INDEX.LEFT_EYEBROW_INNER), p(LANDMARK_INDEX.RIGHT_EYEBROW_INNER)) / faceScale;
-  const leftBrowEyeGap = (p(LANDMARK_INDEX.LEFT_EYE_TOP).y - p(LANDMARK_INDEX.LEFT_EYEBROW_INNER).y) / faceScale;
-  const rightBrowEyeGap = (p(LANDMARK_INDEX.RIGHT_EYE_TOP).y - p(LANDMARK_INDEX.RIGHT_EYEBROW_INNER).y) / faceScale;
-  const avgBrowEyeGap = (leftBrowEyeGap + rightBrowEyeGap) / 2;
+  // 3. Eyebrow Geometry (Anger vs Sadness)
+  const leftBrowInner = p(LANDMARK_INDEX.LEFT_EYEBROW_INNER);
+  const rightBrowInner = p(LANDMARK_INDEX.RIGHT_EYEBROW_INNER);
+  const leftBrowOuter = p(LANDMARK_INDEX.LEFT_EYEBROW_OUTER);
+  const rightBrowOuter = p(LANDMARK_INDEX.RIGHT_EYEBROW_OUTER);
 
-  // When angry/furrowed: browDistance drops (< 0.16) and avgBrowEyeGap drops (< 0.08)
-  const browContraction = Math.max(0, (0.175 - browDistance) * 14.0);
-  const browDescent = Math.max(0, (0.095 - avgBrowEyeGap) * 16.0);
-  const au4_raw = (browContraction * 0.55) + (browDescent * 0.45);
+  const interBrowDist = dist2D(leftBrowInner, rightBrowInner) / eyeDistance; // Normally ~0.38 - 0.48; in anger drops < 0.35
+
+  // Brow slant: In anger, inner brows pull down lower than outer brows (leftInner.y > leftOuter.y)
+  const leftAngrySlant = (leftBrowInner.y - leftBrowOuter.y) / eyeDistance;
+  const rightAngrySlant = (rightBrowInner.y - rightBrowOuter.y) / eyeDistance;
+  const avgAngrySlant = (leftAngrySlant + rightAngrySlant) / 2;
+
+  // In sadness, inner brows pull upward higher than outer brows (leftInner.y < leftOuter.y)
+  const avgSadSlant = -avgAngrySlant;
+
+  // AU4 (Brow Furrow / Anger): Inter-brow contraction AND downward inner brow slant
+  const browContraction = Math.max(0, (0.39 - interBrowDist) * 6.0);
+  const browSlantAnger = Math.max(0, (avgAngrySlant - 0.005) * 14.0);
+  const au4_raw = (browContraction * 0.60) + (browSlantAnger * 0.40);
   const au4_brow_furrow = Math.max(0, Math.min(1, au4_raw));
 
-  // 4. AU15: Depressor Anguli Oris (Mouth Corner Droop / Frown)
-  const lowerLipCenterY = p(LANDMARK_INDEX.LOWER_LIP_CENTER).y;
-  // When corners pull downwards below the lower lip line: (corners.y - lowerLip.y) > 0
-  const cornerDroop = (mouthCornersAvgY - lowerLipCenterY) / faceScale;
-  const au15_raw = (cornerDroop - 0.015) * 22.0;
+  // 4. AU15 (Lip Corner Droop / Sadness)
+  // When corners droop below the bottom lip vermilion:
+  const leftCornerDroop = (leftCorner.y - lowerLipCenter.y) / eyeDistance;
+  const rightCornerDroop = (rightCorner.y - lowerLipCenter.y) / eyeDistance;
+  const avgCornerDroop = (leftCornerDroop + rightCornerDroop) / 2;
+  const au15_raw = (avgCornerDroop - 0.008) * 18.0;
   const au15_lip_depress = Math.max(0, Math.min(1, au15_raw));
 
-  // 5. AU1: Inner Brow Raiser (Medial Eyebrow Angled Upward / Distress)
-  const leftInnerBrowRaise = (p(LANDMARK_INDEX.LEFT_EYEBROW_OUTER).y - p(LANDMARK_INDEX.LEFT_EYEBROW_INNER).y) / faceScale;
-  const rightInnerBrowRaise = (p(LANDMARK_INDEX.RIGHT_EYEBROW_OUTER).y - p(LANDMARK_INDEX.RIGHT_EYEBROW_INNER).y) / faceScale;
-  const avgInnerRaise = (leftInnerBrowRaise + rightInnerBrowRaise) / 2;
-  const au1_raw = (avgInnerRaise - 0.01) * 15.0;
+  // 5. AU1 (Inner Brow Raise / Sadness)
+  const au1_raw = (avgSadSlant - 0.01) * 12.0;
   const au1_inner_brow_raise = Math.max(0, Math.min(1, au1_raw));
-
-  // 6. AU25: Lip Part / Mouth Opening
-  const mouthHeight = dist2D(p(LANDMARK_INDEX.UPPER_LIP_CENTER), p(LANDMARK_INDEX.LOWER_LIP_CENTER)) / faceScale;
-  const au25_lip_part = Math.max(0, Math.min(1, (mouthHeight - 0.03) * 12.0));
 
   return {
     au12_smile: parseFloat(au12_smile.toFixed(3)),
     au4_brow_furrow: parseFloat(au4_brow_furrow.toFixed(3)),
     au15_lip_depress: parseFloat(au15_lip_depress.toFixed(3)),
     au1_inner_brow_raise: parseFloat(au1_inner_brow_raise.toFixed(3)),
-    au25_lip_part: parseFloat(au25_lip_part.toFixed(3)),
-    faceScale: parseFloat((faceScale * 1000).toFixed(1))
+    mouthWidthRatio: parseFloat(mouthWidthRatio.toFixed(3)),
+    eyeDistance: parseFloat((eyeDistance * 1000).toFixed(1))
   };
 }
 
 /**
- * Classify Emotion based on Facial Action Unit Vector
+ * Robust Facial Emotion Classifier
  */
-export function classifyFACSEmotion(au: ActionUnitMetrics, applySmoothing = true): FACSPrediction {
-  // Raw probability energy accumulator
-  let rawHappy = 0.05;
-  let rawSad = 0.05;
-  let rawNeutral = 0.35;
-  let rawAngry = 0.05;
+export function classifyFACSEmotion(au: ActionUnitMetrics, applySmoothing = false): FACSPrediction {
+  let happyScore = 0.05;
+  let angryScore = 0.05;
+  let sadScore = 0.05;
+  let neutralScore = 0.40;
 
-  // 1. Happy: Driven primarily by AU12 (Smile / Lip Corner Puller)
-  if (au.au12_smile > 0.20) {
-    rawHappy += Math.pow(au.au12_smile, 1.4) * 3.2;
-    rawNeutral = Math.max(0.02, rawNeutral - (au.au12_smile * 0.4));
+  // RULE 1: Smiile / Happiness Dominance
+  // If mouth width is expanded (> 0.85) or AU12 is active, it is Happy
+  if (au.mouthWidthRatio > 0.86 || au.au12_smile > 0.18) {
+    const smileIntensity = Math.max(au.au12_smile, (au.mouthWidthRatio - 0.82) * 3.5);
+    happyScore = 0.82 + Math.min(0.16, smileIntensity * 0.25);
+    neutralScore = 0.08;
+    sadScore = 0.04;
+    angryScore = 0.04; // A wide smile completely suppresses anger
+  }
+  // RULE 2: Anger
+  // Eyebrows must be contracted AND mouth must NOT be smiling
+  else if (au.au4_brow_furrow > 0.22 && au.mouthWidthRatio < 0.84) {
+    angryScore = 0.78 + Math.min(0.18, au.au4_brow_furrow * 0.25);
+    neutralScore = 0.10;
+    happyScore = 0.05;
+    sadScore = 0.07;
+  }
+  // RULE 3: Sadness
+  // Mouth corners droop OR inner eyebrows raised, with narrow mouth
+  else if ((au.au15_lip_depress > 0.18 || au.au1_inner_brow_raise > 0.20) && au.mouthWidthRatio < 0.82) {
+    const sadIntensity = Math.max(au.au15_lip_depress, au.au1_inner_brow_raise);
+    sadScore = 0.76 + Math.min(0.20, sadIntensity * 0.25);
+    neutralScore = 0.12;
+    happyScore = 0.05;
+    angryScore = 0.07;
+  }
+  // RULE 4: Neutral (Resting Baseline)
+  else {
+    neutralScore = 0.84 + Math.min(0.12, (0.84 - au.mouthWidthRatio) * 0.5);
+    happyScore = 0.06;
+    sadScore = 0.05;
+    angryScore = 0.05;
   }
 
-  // 2. Angry: Driven by AU4 (Brow Lowerer & Contraction)
-  if (au.au4_brow_furrow > 0.25) {
-    rawAngry += Math.pow(au.au4_brow_furrow, 1.4) * 3.0;
-    rawNeutral = Math.max(0.02, rawNeutral - (au.au4_brow_furrow * 0.4));
-  }
-
-  // 3. Sad: Driven by AU15 (Lip Corner Depressor) + AU1 (Inner Brow Raiser)
-  const sadSignal = (au.au15_lip_depress * 0.65) + (au.au1_inner_brow_raise * 0.35);
-  if (sadSignal > 0.18 || au.au15_lip_depress > 0.22) {
-    rawSad += Math.pow(sadSignal, 1.3) * 2.8;
-    rawNeutral = Math.max(0.02, rawNeutral - (sadSignal * 0.35));
-  }
-
-  // 4. Neutral: Baseline equilibrium when all AU activations are low
-  const totalAUActivation = au.au12_smile + au.au4_brow_furrow + au.au15_lip_depress;
-  if (totalAUActivation < 0.35) {
-    const stillness = (0.35 - totalAUActivation) / 0.35;
-    rawNeutral += stillness * 1.8;
-  }
-
-  // Softmax normalization
-  const sum = rawHappy + rawSad + rawNeutral + rawAngry;
-  let currentScores: Record<EmotionType, number> = {
-    Happy: rawHappy / sum,
-    Sad: rawSad / sum,
-    Neutral: rawNeutral / sum,
-    Angry: rawAngry / sum
-  };
-
-  // Exponential Moving Average (EMA) smoothing for continuous real-time vision
-  if (applySmoothing) {
-    (Object.keys(smoothedScores) as EmotionType[]).forEach((key) => {
-      smoothedScores[key] = (EMA_ALPHA * currentScores[key]) + ((1 - EMA_ALPHA) * smoothedScores[key]);
-    });
-  } else {
-    smoothedScores = { ...currentScores };
-  }
-
-  const scoresList = (['Happy', 'Sad', 'Neutral', 'Angry'] as EmotionType[]).map((emotion) => ({
-    emotion,
-    score: parseFloat((smoothedScores[emotion] || currentScores[emotion]).toFixed(2)),
-    color: EMOTION_COLORS[emotion]
-  }));
+  // Softmax / Normalization
+  const sum = happyScore + angryScore + sadScore + neutralScore;
+  const scoresList = [
+    { emotion: 'Happy' as EmotionType, score: parseFloat((happyScore / sum).toFixed(2)), color: EMOTION_COLORS.Happy },
+    { emotion: 'Sad' as EmotionType, score: parseFloat((sadScore / sum).toFixed(2)), color: EMOTION_COLORS.Sad },
+    { emotion: 'Neutral' as EmotionType, score: parseFloat((neutralScore / sum).toFixed(2)), color: EMOTION_COLORS.Neutral },
+    { emotion: 'Angry' as EmotionType, score: parseFloat((angryScore / sum).toFixed(2)), color: EMOTION_COLORS.Angry }
+  ];
 
   const best = scoresList.reduce((prev, curr) => (curr.score > prev.score ? curr : prev));
 
@@ -236,7 +227,6 @@ export async function getFaceMeshInstance(): Promise<any> {
   if (initPromise) return initPromise;
 
   initPromise = (async () => {
-    // Check global CDN FaceMesh first, fallback to module FaceMesh
     const FaceMeshClass = (window as any).FaceMesh || FaceMeshModule;
     const mesh = new FaceMeshClass({
       locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/${file}`
@@ -258,7 +248,7 @@ export async function getFaceMeshInstance(): Promise<any> {
 }
 
 /**
- * Helper to process an HTMLCanvasElement or Image and return FACS Prediction
+ * Process an HTMLCanvasElement, HTMLImageElement, or HTMLVideoElement
  */
 export async function analyzeImageWithFACS(inputElement: HTMLCanvasElement | HTMLImageElement | HTMLVideoElement): Promise<FACSPrediction> {
   const mesh = await getFaceMeshInstance();
@@ -266,13 +256,12 @@ export async function analyzeImageWithFACS(inputElement: HTMLCanvasElement | HTM
   return new Promise<FACSPrediction>((resolve) => {
     let resolved = false;
 
-    // Timeout safety fallback (2.5s)
     const timeout = setTimeout(() => {
       if (!resolved) {
         resolved = true;
         resolve({
           primary: 'Neutral',
-          confidence: 0.75,
+          confidence: 0.70,
           scores: [
             { emotion: 'Happy', score: 0.10, color: EMOTION_COLORS.Happy },
             { emotion: 'Sad', score: 0.10, color: EMOTION_COLORS.Sad },
@@ -284,8 +273,8 @@ export async function analyzeImageWithFACS(inputElement: HTMLCanvasElement | HTM
             au4_brow_furrow: 0,
             au15_lip_depress: 0,
             au1_inner_brow_raise: 0,
-            au25_lip_part: 0,
-            faceScale: 0
+            mouthWidthRatio: 0.75,
+            eyeDistance: 100
           },
           landmarksDetected: false
         });
@@ -312,8 +301,8 @@ export async function analyzeImageWithFACS(inputElement: HTMLCanvasElement | HTM
             au4_brow_furrow: 0,
             au15_lip_depress: 0,
             au1_inner_brow_raise: 0,
-            au25_lip_part: 0,
-            faceScale: 0
+            mouthWidthRatio: 0.75,
+            eyeDistance: 100
           },
           landmarksDetected: false
         });
