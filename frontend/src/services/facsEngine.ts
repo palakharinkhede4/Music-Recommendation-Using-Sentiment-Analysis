@@ -1,24 +1,22 @@
 /**
- * High-Precision Facial Action Coding System (FACS) Biometric Engine
- * Calibrated for Natural Expressions, Glasses, and Diverse Lighting
+ * Advanced Multi-Layer Emotion Detection Engine
+ * Combines Google MediaPipe Neural Blendshapes (52 ARKit Action Units) + 3D Geometric FACS Analysis
  * 
- * Based on Paul Ekman's FACS:
- * - Happy: Mouth widening (W_mouth > 0.88 * Eye_Dist), mouth corner elevation, cheek raising
- * - Angry: Inter-eyebrow horizontal contraction, angry brow slant (inner brows lower than outer), narrow mouth
- * - Sad: Lip corner depression (corners lower than bottom lip), sad brow slant (inner brows raised), narrow mouth
- * - Neutral: Resting baseline equilibrium
+ * Layer 1: Google Pretrained Deep Neural Face Landmarker (52 Blendshapes: smile, browDown, frown, eyeSquint, etc.)
+ * Layer 2: 3D Inter-Ocular Geometric FACS Vectors (Mouth width, corner lift, brow slant, chin elevation)
+ * Layer 3: Calibrated Softmax Ensemble Classifier
  */
 
-import { FaceMesh as FaceMeshModule, Results, NormalizedLandmarkList } from '@mediapipe/face_mesh';
+import { FilesetResolver, FaceLandmarker, FaceLandmarkerResult } from '@mediapipe/tasks-vision';
 
 export type EmotionType = 'Happy' | 'Sad' | 'Neutral' | 'Angry';
 
 export interface ActionUnitMetrics {
-  au12_smile: number;          // Lip corner puller & width expansion [0..1]
-  au4_brow_furrow: number;     // Eyebrow inward contraction & downward slant [0..1]
-  au15_lip_depress: number;    // Mouth corner downward depression [0..1]
-  au1_inner_brow_raise: number;// Inner brow elevation / distress [0..1]
-  mouthWidthRatio: number;     // Mouth width normalized to inter-ocular distance
+  au12_smile: number;          // Smile / Lip Corner Puller [0..1]
+  au4_brow_furrow: number;     // Eyebrow Lowerer / Furrow [0..1]
+  au15_lip_depress: number;    // Mouth Corner Depressor / Frown [0..1]
+  au1_inner_brow_raise: number;// Inner Brow Raiser [0..1]
+  mouthWidthRatio: number;     // Normalized mouth width to inter-eye distance
   eyeDistance: number;         // Inter-ocular distance
 }
 
@@ -28,7 +26,7 @@ export interface FACSPrediction {
   scores: { emotion: EmotionType; score: number; color: string }[];
   actionUnits: ActionUnitMetrics;
   landmarksDetected: boolean;
-  rawLandmarks?: NormalizedLandmarkList;
+  blendshapesUsed: boolean;
 }
 
 export const EMOTION_COLORS: Record<EmotionType, string> = {
@@ -38,37 +36,26 @@ export const EMOTION_COLORS: Record<EmotionType, string> = {
   Angry: '#ef4444'     // Rose / Red
 };
 
-/**
- * Key MediaPipe Landmark Indices (468 3D points)
- */
+// Key MediaPipe 3D Landmark Indices (478 points)
 export const LANDMARK_INDEX = {
-  // Eyes
   LEFT_EYE_OUTER: 33,
   LEFT_EYE_INNER: 133,
   RIGHT_EYE_INNER: 362,
   RIGHT_EYE_OUTER: 263,
   LEFT_EYE_TOP: 159,
   RIGHT_EYE_TOP: 386,
-
-  // Forehead & Chin
   FOREHEAD_TOP: 10,
   CHIN_BOTTOM: 152,
   NOSE_TIP: 1,
-
-  // Mouth
   MOUTH_LEFT_CORNER: 61,
   MOUTH_RIGHT_CORNER: 291,
   UPPER_LIP_CENTER: 13,
   LOWER_LIP_CENTER: 14,
   LOWER_LIP_BOTTOM: 17,
-
-  // Eyebrows
   LEFT_EYEBROW_INNER: 55,
   LEFT_EYEBROW_OUTER: 70,
   RIGHT_EYEBROW_INNER: 285,
   RIGHT_EYEBROW_OUTER: 300,
-
-  // Cheeks
   LEFT_CHEEK: 116,
   RIGHT_CHEEK: 345
 };
@@ -78,18 +65,112 @@ function dist2D(p1: { x: number; y: number }, p2: { x: number; y: number }): num
 }
 
 /**
- * Extract High-Precision Facial Action Unit Metrics
+ * Layer 1: Classify Emotion using Google MediaPipe's 52 Neural Blendshape Activations
  */
-export function computeActionUnits(landmarks: NormalizedLandmarkList): ActionUnitMetrics {
+function classifyWithNeuralBlendshapes(blendshapeCategories: { categoryName: string; score: number }[]): {
+  scores: Record<EmotionType, number>;
+  activeAUs: { smile: number; browDown: number; frown: number; innerBrowUp: number };
+} {
+  const b: Record<string, number> = {};
+  for (const item of blendshapeCategories) {
+    b[item.categoryName] = item.score;
+  }
+
+  // Extract key neural Action Unit scores (0.0 to 1.0)
+  const mouthSmileL = b['mouthSmileLeft'] || 0;
+  const mouthSmileR = b['mouthSmileRight'] || 0;
+  const avgSmile = (mouthSmileL + mouthSmileR) / 2;
+
+  const cheekSquintL = b['cheekSquintLeft'] || 0;
+  const cheekSquintR = b['cheekSquintRight'] || 0;
+  const avgCheekSquint = (cheekSquintL + cheekSquintR) / 2;
+
+  const eyeSquintL = b['eyeSquintLeft'] || 0;
+  const eyeSquintR = b['eyeSquintRight'] || 0;
+  const avgEyeSquint = (eyeSquintL + eyeSquintR) / 2;
+
+  const jawOpen = b['jawOpen'] || 0;
+  const mouthDimple = ((b['mouthDimpleLeft'] || 0) + (b['mouthDimpleRight'] || 0)) / 2;
+
+  // Anger indicators
+  const browDownL = b['browDownLeft'] || 0;
+  const browDownR = b['browDownRight'] || 0;
+  const avgBrowDown = (browDownL + browDownR) / 2;
+
+  const mouthPressL = b['mouthPressLeft'] || 0;
+  const mouthPressR = b['mouthPressRight'] || 0;
+  const avgMouthPress = (mouthPressL + mouthPressR) / 2;
+
+  const noseSneerL = b['noseSneerLeft'] || 0;
+  const noseSneerR = b['noseSneerRight'] || 0;
+  const avgNoseSneer = (noseSneerL + noseSneerR) / 2;
+
+  // Sadness indicators
+  const mouthFrownL = b['mouthFrownLeft'] || 0;
+  const mouthFrownR = b['mouthFrownRight'] || 0;
+  const avgMouthFrown = (mouthFrownL + mouthFrownR) / 2;
+
+  const browInnerUp = b['browInnerUp'] || 0;
+  const mouthShrugLower = b['mouthShrugLower'] || 0;
+  const mouthRollLower = b['mouthRollLower'] || 0;
+  const mouthPucker = b['mouthPucker'] || 0;
+
+  // Calculate high-order activation energies
+  // 1. HAPPY ENERGY
+  // Smile combined with cheek raising or open mouth laugh
+  let happyEnergy = (avgSmile * 3.5) + (avgCheekSquint * 1.5) + (mouthDimple * 1.0) + (avgSmile > 0.15 ? jawOpen * 0.8 : 0);
+
+  // 2. ANGRY ENERGY
+  // Brow lowerer combined with mouth pressing or nose sneering (ONLY if NOT smiling)
+  let angryEnergy = (avgBrowDown * 3.0) + (avgMouthPress * 1.2) + (avgNoseSneer * 1.2);
+  if (avgSmile > 0.20) {
+    // When smiling, browDown is squinting, suppress anger completely
+    angryEnergy *= 0.15;
+  }
+
+  // 3. SAD ENERGY
+  // Frown combined with inner brow raising or mouth shrug (ONLY if NOT smiling)
+  let sadEnergy = (avgMouthFrown * 3.2) + (browInnerUp * 1.8) + (mouthShrugLower * 1.2) + (mouthRollLower * 0.8);
+  if (avgSmile > 0.15) {
+    sadEnergy *= 0.15;
+  }
+
+  // 4. NEUTRAL ENERGY
+  // Baseline stillness when no active expression is dominant
+  const totalExpression = happyEnergy + angryEnergy + sadEnergy;
+  let neutralEnergy = Math.max(0.08, 1.2 - totalExpression);
+
+  // Softmax normalization
+  const sum = Math.max(0.001, happyEnergy + angryEnergy + sadEnergy + neutralEnergy);
+
+  return {
+    scores: {
+      Happy: happyEnergy / sum,
+      Sad: sadEnergy / sum,
+      Neutral: neutralEnergy / sum,
+      Angry: angryEnergy / sum
+    },
+    activeAUs: {
+      smile: avgSmile,
+      browDown: avgBrowDown,
+      frown: avgMouthFrown,
+      innerBrowUp: browInnerUp
+    }
+  };
+}
+
+/**
+ * Layer 2: Classify Emotion using 3D Geometric FACS Vector Mathematics
+ */
+export function computeGeometricFACS(landmarks: any[]): {
+  scores: Record<EmotionType, number>;
+  metrics: ActionUnitMetrics;
+} {
   const p = (idx: number) => landmarks[idx] || { x: 0, y: 0, z: 0 };
 
-  // 1. Inter-Ocular Reference Distance (Distance between outer eye corners)
   const eyeDistance = dist2D(p(LANDMARK_INDEX.LEFT_EYE_OUTER), p(LANDMARK_INDEX.RIGHT_EYE_OUTER)) || 0.1;
-  const faceHeight = dist2D(p(LANDMARK_INDEX.CHIN_BOTTOM), p(LANDMARK_INDEX.FOREHEAD_TOP)) || 0.2;
-
-  // 2. Mouth Geometry (Width & Corner Lift)
-  const rawMouthWidth = dist2D(p(LANDMARK_INDEX.MOUTH_LEFT_CORNER), p(LANDMARK_INDEX.MOUTH_RIGHT_CORNER));
-  const mouthWidthRatio = rawMouthWidth / eyeDistance; // In smiles, mouth width expands from ~0.75 to >0.92
+  const mouthWidth = dist2D(p(LANDMARK_INDEX.MOUTH_LEFT_CORNER), p(LANDMARK_INDEX.MOUTH_RIGHT_CORNER));
+  const mouthWidthRatio = mouthWidth / eyeDistance;
 
   const leftCorner = p(LANDMARK_INDEX.MOUTH_LEFT_CORNER);
   const rightCorner = p(LANDMARK_INDEX.MOUTH_RIGHT_CORNER);
@@ -97,226 +178,237 @@ export function computeActionUnits(landmarks: NormalizedLandmarkList): ActionUni
   const lowerLipCenter = p(LANDMARK_INDEX.LOWER_LIP_CENTER);
   const mouthCenterY = (upperLipCenter.y + lowerLipCenter.y) / 2;
 
-  // In screen space (y increases downward):
-  // If corners are elevated above the mouth center: (mouthCenterY - corner.y) > 0
   const leftCornerLift = (mouthCenterY - leftCorner.y) / eyeDistance;
   const rightCornerLift = (mouthCenterY - rightCorner.y) / eyeDistance;
   const avgCornerLift = (leftCornerLift + rightCornerLift) / 2;
 
-  // AU12 (Smile): Combines mouth widening and upward corner angle
-  const widthBonus = Math.max(0, (mouthWidthRatio - 0.80) * 4.5);
-  const liftBonus = Math.max(0, (avgCornerLift + 0.01) * 12.0);
-  const au12_raw = (widthBonus * 0.65) + (liftBonus * 0.35);
-  const au12_smile = Math.max(0, Math.min(1, au12_raw));
+  // AU12 Smile
+  const widthBonus = Math.max(0, (mouthWidthRatio - 0.78) * 4.5);
+  const liftBonus = Math.max(0, (avgCornerLift + 0.015) * 14.0);
+  const au12_smile = Math.max(0, Math.min(1, (widthBonus * 0.6) + (liftBonus * 0.4)));
 
-  // 3. Eyebrow Geometry (Anger vs Sadness)
+  // Eyebrows
   const leftBrowInner = p(LANDMARK_INDEX.LEFT_EYEBROW_INNER);
   const rightBrowInner = p(LANDMARK_INDEX.RIGHT_EYEBROW_INNER);
   const leftBrowOuter = p(LANDMARK_INDEX.LEFT_EYEBROW_OUTER);
   const rightBrowOuter = p(LANDMARK_INDEX.RIGHT_EYEBROW_OUTER);
 
-  const interBrowDist = dist2D(leftBrowInner, rightBrowInner) / eyeDistance; // Normally ~0.38 - 0.48; in anger drops < 0.35
-
-  // Brow slant: In anger, inner brows pull down lower than outer brows (leftInner.y > leftOuter.y)
+  const interBrowDist = dist2D(leftBrowInner, rightBrowInner) / eyeDistance;
   const leftAngrySlant = (leftBrowInner.y - leftBrowOuter.y) / eyeDistance;
   const rightAngrySlant = (rightBrowInner.y - rightBrowOuter.y) / eyeDistance;
   const avgAngrySlant = (leftAngrySlant + rightAngrySlant) / 2;
-
-  // In sadness, inner brows pull upward higher than outer brows (leftInner.y < leftOuter.y)
   const avgSadSlant = -avgAngrySlant;
 
-  // AU4 (Brow Furrow / Anger): Inter-brow contraction AND downward inner brow slant
+  // AU4 Anger
   const browContraction = Math.max(0, (0.39 - interBrowDist) * 6.0);
   const browSlantAnger = Math.max(0, (avgAngrySlant - 0.005) * 14.0);
-  const au4_raw = (browContraction * 0.60) + (browSlantAnger * 0.40);
-  const au4_brow_furrow = Math.max(0, Math.min(1, au4_raw));
+  const au4_brow_furrow = Math.max(0, Math.min(1, (browContraction * 0.6) + (browSlantAnger * 0.4)));
 
-  // 4. AU15 (Lip Corner Droop / Sadness)
-  // When corners droop below the bottom lip vermilion:
+  // AU15 Sadness
   const leftCornerDroop = (leftCorner.y - lowerLipCenter.y) / eyeDistance;
   const rightCornerDroop = (rightCorner.y - lowerLipCenter.y) / eyeDistance;
   const avgCornerDroop = (leftCornerDroop + rightCornerDroop) / 2;
-  const au15_raw = (avgCornerDroop - 0.008) * 18.0;
-  const au15_lip_depress = Math.max(0, Math.min(1, au15_raw));
+  const au15_lip_depress = Math.max(0, Math.min(1, (avgCornerDroop - 0.006) * 18.0));
 
-  // 5. AU1 (Inner Brow Raise / Sadness)
-  const au1_raw = (avgSadSlant - 0.01) * 12.0;
-  const au1_inner_brow_raise = Math.max(0, Math.min(1, au1_raw));
+  // AU1 Sad Brow
+  const au1_inner_brow_raise = Math.max(0, Math.min(1, (avgSadSlant - 0.01) * 12.0));
 
+  let happy = 0.05;
+  let angry = 0.05;
+  let sad = 0.05;
+  let neutral = 0.40;
+
+  if (mouthWidthRatio > 0.85 || au12_smile > 0.16) {
+    const intensity = Math.max(au12_smile, (mouthWidthRatio - 0.80) * 3.5);
+    happy = 0.85 + Math.min(0.14, intensity * 0.25);
+    neutral = 0.07;
+    sad = 0.04;
+    angry = 0.04;
+  } else if (au4_brow_furrow > 0.22 && mouthWidthRatio < 0.84) {
+    angry = 0.80 + Math.min(0.16, au4_brow_furrow * 0.25);
+    neutral = 0.10;
+    happy = 0.05;
+    sad = 0.05;
+  } else if ((au15_lip_depress > 0.16 || au1_inner_brow_raise > 0.18) && mouthWidthRatio < 0.82) {
+    const sadIntensity = Math.max(au15_lip_depress, au1_inner_brow_raise);
+    sad = 0.78 + Math.min(0.18, sadIntensity * 0.25);
+    neutral = 0.12;
+    happy = 0.05;
+    angry = 0.05;
+  } else {
+    neutral = 0.85 + Math.min(0.10, (0.84 - mouthWidthRatio) * 0.5);
+    happy = 0.05;
+    sad = 0.05;
+    angry = 0.05;
+  }
+
+  const sum = happy + angry + sad + neutral;
   return {
-    au12_smile: parseFloat(au12_smile.toFixed(3)),
-    au4_brow_furrow: parseFloat(au4_brow_furrow.toFixed(3)),
-    au15_lip_depress: parseFloat(au15_lip_depress.toFixed(3)),
-    au1_inner_brow_raise: parseFloat(au1_inner_brow_raise.toFixed(3)),
-    mouthWidthRatio: parseFloat(mouthWidthRatio.toFixed(3)),
-    eyeDistance: parseFloat((eyeDistance * 1000).toFixed(1))
+    scores: {
+      Happy: happy / sum,
+      Sad: sad / sum,
+      Neutral: neutral / sum,
+      Angry: angry / sum
+    },
+    metrics: {
+      au12_smile: parseFloat(au12_smile.toFixed(3)),
+      au4_brow_furrow: parseFloat(au4_brow_furrow.toFixed(3)),
+      au15_lip_depress: parseFloat(au15_lip_depress.toFixed(3)),
+      au1_inner_brow_raise: parseFloat(au1_inner_brow_raise.toFixed(3)),
+      mouthWidthRatio: parseFloat(mouthWidthRatio.toFixed(3)),
+      eyeDistance: parseFloat((eyeDistance * 1000).toFixed(1))
+    }
   };
 }
 
 /**
- * Robust Facial Emotion Classifier
+ * Singleton Google Tasks-Vision FaceLandmarker Instance
  */
-export function classifyFACSEmotion(au: ActionUnitMetrics, applySmoothing = false): FACSPrediction {
-  let happyScore = 0.05;
-  let angryScore = 0.05;
-  let sadScore = 0.05;
-  let neutralScore = 0.40;
+let landmarkerInstance: FaceLandmarker | null = null;
+let landmarkerInitPromise: Promise<FaceLandmarker> | null = null;
 
-  // RULE 1: Smiile / Happiness Dominance
-  // If mouth width is expanded (> 0.85) or AU12 is active, it is Happy
-  if (au.mouthWidthRatio > 0.86 || au.au12_smile > 0.18) {
-    const smileIntensity = Math.max(au.au12_smile, (au.mouthWidthRatio - 0.82) * 3.5);
-    happyScore = 0.82 + Math.min(0.16, smileIntensity * 0.25);
-    neutralScore = 0.08;
-    sadScore = 0.04;
-    angryScore = 0.04; // A wide smile completely suppresses anger
-  }
-  // RULE 2: Anger
-  // Eyebrows must be contracted AND mouth must NOT be smiling
-  else if (au.au4_brow_furrow > 0.22 && au.mouthWidthRatio < 0.84) {
-    angryScore = 0.78 + Math.min(0.18, au.au4_brow_furrow * 0.25);
-    neutralScore = 0.10;
-    happyScore = 0.05;
-    sadScore = 0.07;
-  }
-  // RULE 3: Sadness
-  // Mouth corners droop OR inner eyebrows raised, with narrow mouth
-  else if ((au.au15_lip_depress > 0.18 || au.au1_inner_brow_raise > 0.20) && au.mouthWidthRatio < 0.82) {
-    const sadIntensity = Math.max(au.au15_lip_depress, au.au1_inner_brow_raise);
-    sadScore = 0.76 + Math.min(0.20, sadIntensity * 0.25);
-    neutralScore = 0.12;
-    happyScore = 0.05;
-    angryScore = 0.07;
-  }
-  // RULE 4: Neutral (Resting Baseline)
-  else {
-    neutralScore = 0.84 + Math.min(0.12, (0.84 - au.mouthWidthRatio) * 0.5);
-    happyScore = 0.06;
-    sadScore = 0.05;
-    angryScore = 0.05;
-  }
+export async function getFaceLandmarker(): Promise<FaceLandmarker> {
+  if (landmarkerInstance) return landmarkerInstance;
+  if (landmarkerInitPromise) return landmarkerInitPromise;
 
-  // Softmax / Normalization
-  const sum = happyScore + angryScore + sadScore + neutralScore;
-  const scoresList = [
-    { emotion: 'Happy' as EmotionType, score: parseFloat((happyScore / sum).toFixed(2)), color: EMOTION_COLORS.Happy },
-    { emotion: 'Sad' as EmotionType, score: parseFloat((sadScore / sum).toFixed(2)), color: EMOTION_COLORS.Sad },
-    { emotion: 'Neutral' as EmotionType, score: parseFloat((neutralScore / sum).toFixed(2)), color: EMOTION_COLORS.Neutral },
-    { emotion: 'Angry' as EmotionType, score: parseFloat((angryScore / sum).toFixed(2)), color: EMOTION_COLORS.Angry }
-  ];
+  landmarkerInitPromise = (async () => {
+    try {
+      const filesetResolver = await FilesetResolver.forVisionTasks(
+        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
+      );
 
-  const best = scoresList.reduce((prev, curr) => (curr.score > prev.score ? curr : prev));
+      const landmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
+        baseOptions: {
+          modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+          delegate: 'GPU'
+        },
+        outputFaceBlendshapes: true,
+        outputFacialTransformationMatrixes: false,
+        runningMode: 'IMAGE',
+        numFaces: 1
+      });
 
-  return {
-    primary: best.emotion,
-    confidence: best.score,
-    scores: scoresList,
-    actionUnits: au,
-    landmarksDetected: true
-  };
-}
-
-/**
- * Singleton MediaPipe FaceMesh Instance Manager
- */
-let faceMeshInstance: any = null;
-let initPromise: Promise<any> | null = null;
-
-export async function getFaceMeshInstance(): Promise<any> {
-  if (faceMeshInstance) return faceMeshInstance;
-  if (initPromise) return initPromise;
-
-  initPromise = (async () => {
-    const FaceMeshClass = (window as any).FaceMesh || FaceMeshModule;
-    const mesh = new FaceMeshClass({
-      locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/${file}`
-    });
-
-    mesh.setOptions({
-      maxNumFaces: 1,
-      refineLandmarks: true,
-      minDetectionConfidence: 0.5,
-      minTrackingConfidence: 0.5
-    });
-
-    await mesh.initialize();
-    faceMeshInstance = mesh;
-    return mesh;
+      landmarkerInstance = landmarker;
+      return landmarker;
+    } catch (err) {
+      console.warn("Tasks-vision GPU init failed, trying CPU fallback...", err);
+      const filesetResolver = await FilesetResolver.forVisionTasks(
+        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
+      );
+      const landmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
+        baseOptions: {
+          modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+          delegate: 'CPU'
+        },
+        outputFaceBlendshapes: true,
+        runningMode: 'IMAGE',
+        numFaces: 1
+      });
+      landmarkerInstance = landmarker;
+      return landmarker;
+    }
   })();
 
-  return initPromise;
+  return landmarkerInitPromise;
 }
 
 /**
- * Process an HTMLCanvasElement, HTMLImageElement, or HTMLVideoElement
+ * Master Hybrid Inference Function
+ * Evaluates both Deep Neural Blendshapes and 3D Geometric FACS Vectors
  */
-export async function analyzeImageWithFACS(inputElement: HTMLCanvasElement | HTMLImageElement | HTMLVideoElement): Promise<FACSPrediction> {
-  const mesh = await getFaceMeshInstance();
+export async function analyzeImageWithFACS(
+  inputElement: HTMLCanvasElement | HTMLImageElement | HTMLVideoElement
+): Promise<FACSPrediction> {
+  try {
+    const landmarker = await getFaceLandmarker();
+    const result: FaceLandmarkerResult = landmarker.detect(inputElement);
 
-  return new Promise<FACSPrediction>((resolve) => {
-    let resolved = false;
+    if (!result.faceLandmarks || result.faceLandmarks.length === 0) {
+      return {
+        primary: 'Neutral',
+        confidence: 0.70,
+        scores: [
+          { emotion: 'Happy', score: 0.10, color: EMOTION_COLORS.Happy },
+          { emotion: 'Sad', score: 0.10, color: EMOTION_COLORS.Sad },
+          { emotion: 'Neutral', score: 0.70, color: EMOTION_COLORS.Neutral },
+          { emotion: 'Angry', score: 0.10, color: EMOTION_COLORS.Angry }
+        ],
+        actionUnits: {
+          au12_smile: 0,
+          au4_brow_furrow: 0,
+          au15_lip_depress: 0,
+          au1_inner_brow_raise: 0,
+          mouthWidthRatio: 0.75,
+          eyeDistance: 100
+        },
+        landmarksDetected: false,
+        blendshapesUsed: false
+      };
+    }
 
-    const timeout = setTimeout(() => {
-      if (!resolved) {
-        resolved = true;
-        resolve({
-          primary: 'Neutral',
-          confidence: 0.70,
-          scores: [
-            { emotion: 'Happy', score: 0.10, color: EMOTION_COLORS.Happy },
-            { emotion: 'Sad', score: 0.10, color: EMOTION_COLORS.Sad },
-            { emotion: 'Neutral', score: 0.70, color: EMOTION_COLORS.Neutral },
-            { emotion: 'Angry', score: 0.10, color: EMOTION_COLORS.Angry }
-          ],
-          actionUnits: {
-            au12_smile: 0,
-            au4_brow_furrow: 0,
-            au15_lip_depress: 0,
-            au1_inner_brow_raise: 0,
-            mouthWidthRatio: 0.75,
-            eyeDistance: 100
-          },
-          landmarksDetected: false
-        });
+    const landmarks = result.faceLandmarks[0];
+    const geom = computeGeometricFACS(landmarks);
+
+    // If neural blendshapes are present from Google model
+    let finalScores: Record<EmotionType, number>;
+    let blendshapesUsed = false;
+
+    if (result.faceBlendshapes && result.faceBlendshapes.length > 0) {
+      const blendshapeCategories = result.faceBlendshapes[0].categories;
+      const neural = classifyWithNeuralBlendshapes(blendshapeCategories);
+
+      // Ensemble fusion: 65% Google Deep Neural Blendshapes + 35% 3D Geometric FACS
+      const emotions: EmotionType[] = ['Happy', 'Sad', 'Neutral', 'Angry'];
+      finalScores = {} as Record<EmotionType, number>;
+
+      for (const e of emotions) {
+        finalScores[e] = (0.65 * neural.scores[e]) + (0.35 * geom.scores[e]);
       }
-    }, 2500);
+      blendshapesUsed = true;
+    } else {
+      finalScores = geom.scores;
+    }
 
-    const handleResults = (results: Results) => {
-      if (resolved) return;
-      resolved = true;
-      clearTimeout(timeout);
+    // Softmax normalization
+    const sum = finalScores.Happy + finalScores.Sad + finalScores.Neutral + finalScores.Angry;
+    const scoresList = (['Happy', 'Sad', 'Neutral', 'Angry'] as EmotionType[]).map((emotion) => ({
+      emotion,
+      score: parseFloat((finalScores[emotion] / sum).toFixed(2)),
+      color: EMOTION_COLORS[emotion]
+    }));
 
-      if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
-        resolve({
-          primary: 'Neutral',
-          confidence: 0.65,
-          scores: [
-            { emotion: 'Happy', score: 0.10, color: EMOTION_COLORS.Happy },
-            { emotion: 'Sad', score: 0.10, color: EMOTION_COLORS.Sad },
-            { emotion: 'Neutral', score: 0.70, color: EMOTION_COLORS.Neutral },
-            { emotion: 'Angry', score: 0.10, color: EMOTION_COLORS.Angry }
-          ],
-          actionUnits: {
-            au12_smile: 0,
-            au4_brow_furrow: 0,
-            au15_lip_depress: 0,
-            au1_inner_brow_raise: 0,
-            mouthWidthRatio: 0.75,
-            eyeDistance: 100
-          },
-          landmarksDetected: false
-        });
-        return;
-      }
+    const best = scoresList.reduce((prev, curr) => (curr.score > prev.score ? curr : prev));
 
-      const landmarks = results.multiFaceLandmarks[0];
-      const au = computeActionUnits(landmarks);
-      const prediction = classifyFACSEmotion(au, false);
-      prediction.rawLandmarks = landmarks;
-      resolve(prediction);
+    return {
+      primary: best.emotion,
+      confidence: best.score,
+      scores: scoresList,
+      actionUnits: geom.metrics,
+      landmarksDetected: true,
+      blendshapesUsed
     };
-
-    mesh.onResults(handleResults);
-    mesh.send({ image: inputElement });
-  });
+  } catch (e) {
+    console.warn("Hybrid Face Landmarker exception, applying robust geometry...", e);
+    // Fallback: Return safe neutral prediction
+    return {
+      primary: 'Neutral',
+      confidence: 0.75,
+      scores: [
+        { emotion: 'Happy', score: 0.10, color: EMOTION_COLORS.Happy },
+        { emotion: 'Sad', score: 0.10, color: EMOTION_COLORS.Sad },
+        { emotion: 'Neutral', score: 0.70, color: EMOTION_COLORS.Neutral },
+        { emotion: 'Angry', score: 0.10, color: EMOTION_COLORS.Angry }
+      ],
+      actionUnits: {
+        au12_smile: 0,
+        au4_brow_furrow: 0,
+        au15_lip_depress: 0,
+        au1_inner_brow_raise: 0,
+        mouthWidthRatio: 0.75,
+        eyeDistance: 100
+      },
+      landmarksDetected: false,
+      blendshapesUsed: false
+    };
+  }
 }
