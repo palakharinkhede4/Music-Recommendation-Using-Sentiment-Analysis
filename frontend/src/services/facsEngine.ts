@@ -3,9 +3,9 @@
  * Combines Google MediaPipe 52 Neural Blendshapes + 3D Geometric FACS Analysis
  * 
  * Accurately classifies:
- * - Happy: Genuine smiles, laughing with open mouth, cheek raising, wide mouth expansion
- * - Angry: Brow furrow, cold glare, tight mouth/lips, nose sneer, shouting/fierce open mouth
- * - Sad: Lip corner droop, inner eyebrow raise, mouth shrug/pout
+ * - Happy: Genuine smiles, open mouth laughter, cheek raising, wide mouth expansion
+ * - Sad: Downward facing lips / mouth corner droop, frown, pout, inner eyebrow raise
+ * - Angry: Eyebrow furrow / brow lowerer, cold stern glare, tight scowl (when mouth is NOT drooping)
  * - Neutral: Resting baseline equilibrium
  */
 
@@ -107,48 +107,55 @@ export function computeGeometricFACS(landmarks: any[]): {
   const liftBonus = Math.max(0, (avgCornerLift + 0.015) * 14.0);
   const au12_smile = Math.max(0, Math.min(1, (widthBonus * 0.6) + (liftBonus * 0.4)));
 
-  // AU4 Anger
-  const browContraction = Math.max(0, (0.43 - interBrowDist) * 6.0);
-  const browSlantAnger = Math.max(0, (avgAngrySlant + 0.005) * 16.0);
-  const shoutingMouth = (mouthHeightRatio > 0.18 && avgCornerLift < 0.01) ? 0.6 : 0.0;
-  const au4_brow_furrow = Math.max(0, Math.min(1, (browContraction * 0.45) + (browSlantAnger * 0.35) + (shoutingMouth * 0.20)));
-
-  // AU15 Sadness
+  // AU15 Sadness (Mouth Corners Drooping Below Lower Lip Line)
   const leftCornerDroop = (leftCorner.y - lowerLipCenter.y) / eyeDistance;
   const rightCornerDroop = (rightCorner.y - lowerLipCenter.y) / eyeDistance;
   const avgCornerDroop = (leftCornerDroop + rightCornerDroop) / 2;
-  const au15_lip_depress = Math.max(0, Math.min(1, (avgCornerDroop - 0.004) * 18.0));
+  const au15_lip_depress = Math.max(0, Math.min(1, (avgCornerDroop - 0.002) * 20.0));
 
   // AU1 Sad Brow
   const au1_inner_brow_raise = Math.max(0, Math.min(1, (avgSadSlant - 0.005) * 14.0));
+
+  // AU4 Anger (Eyebrow contraction + downward slant)
+  const browContraction = Math.max(0, (0.43 - interBrowDist) * 6.0);
+  const browSlantAnger = Math.max(0, (avgAngrySlant + 0.005) * 16.0);
+  const shoutingMouth = (mouthHeightRatio > 0.18 && avgCornerLift < 0.01 && au15_lip_depress < 0.08) ? 0.6 : 0.0;
+  const au4_brow_furrow = Math.max(0, Math.min(1, (browContraction * 0.45) + (browSlantAnger * 0.35) + (shoutingMouth * 0.20)));
 
   let happy = 0.05;
   let angry = 0.05;
   let sad = 0.05;
   let neutral = 0.40;
 
+  // RULE 1: Smile / Happy Dominance
   if (mouthWidthRatio > 0.85 || au12_smile > 0.18) {
     const intensity = Math.max(au12_smile, (mouthWidthRatio - 0.80) * 3.5);
-    happy = 0.85 + Math.min(0.14, intensity * 0.25);
-    neutral = 0.07;
-    sad = 0.04;
-    angry = 0.04;
-  } else if ((au4_brow_furrow > 0.18 || shoutingMouth > 0) && mouthWidthRatio < 0.86 && au1_inner_brow_raise < 0.15) {
-    angry = 0.82 + Math.min(0.16, au4_brow_furrow * 0.25);
-    neutral = 0.09;
-    happy = 0.04;
-    sad = 0.05;
-  } else if ((au15_lip_depress > 0.15 || au1_inner_brow_raise > 0.16) && mouthWidthRatio < 0.83) {
+    happy = 0.88 + Math.min(0.10, intensity * 0.25);
+    neutral = 0.06;
+    sad = 0.03;
+    angry = 0.03;
+  }
+  // RULE 2: Lips Facing Down / Frown / Pout -> SADNESS DOMINANCE
+  else if (au15_lip_depress > 0.08 || (au1_inner_brow_raise > 0.16 && mouthWidthRatio < 0.83)) {
     const sadIntensity = Math.max(au15_lip_depress, au1_inner_brow_raise);
-    sad = 0.80 + Math.min(0.18, sadIntensity * 0.25);
-    neutral = 0.10;
-    happy = 0.05;
-    angry = 0.05;
-  } else {
-    neutral = 0.84 + Math.min(0.12, (0.84 - mouthWidthRatio) * 0.5);
+    sad = 0.88 + Math.min(0.10, sadIntensity * 0.25);
+    neutral = 0.06;
+    happy = 0.03;
+    angry = 0.03; // Downward lips suppress anger
+  }
+  // RULE 3: Anger (Brow Furrow & Glare without lip corner droop)
+  else if ((au4_brow_furrow > 0.20 || shoutingMouth > 0) && mouthWidthRatio < 0.86 && au15_lip_depress < 0.06) {
+    angry = 0.85 + Math.min(0.12, au4_brow_furrow * 0.25);
+    neutral = 0.08;
+    happy = 0.03;
+    sad = 0.04;
+  }
+  // RULE 4: Neutral
+  else {
+    neutral = 0.86 + Math.min(0.10, (0.84 - mouthWidthRatio) * 0.5);
     happy = 0.05;
     sad = 0.05;
-    angry = 0.05;
+    angry = 0.04;
   }
 
   const sum = happy + angry + sad + neutral;
@@ -200,16 +207,27 @@ function classifyWithNeuralBlendshapes(
   const mouthShrug = b['mouthShrugLower'] || 0;
 
   // 1. HAPPY ENERGY
-  let happyEnergy = (avgSmile * 4.5) + (cheekSquint * 1.5) + (mouthDimple * 1.0);
-  if (geom.metrics.mouthWidthRatio > 0.86) {
-    happyEnergy += (geom.metrics.mouthWidthRatio - 0.82) * 4.0;
+  let happyEnergy = 0.0;
+  if (avgSmile > 0.16 || geom.metrics.mouthWidthRatio > 0.85) {
+    happyEnergy = (avgSmile * 4.5) + (cheekSquint * 1.5) + (mouthDimple * 1.0);
+    if (geom.metrics.mouthWidthRatio > 0.86) {
+      happyEnergy += (geom.metrics.mouthWidthRatio - 0.82) * 4.0;
+    }
   }
 
-  // 2. ANGRY ENERGY (Sensitive to cold glare, tight mouth, sneer, and shouting anger)
+  // 2. SAD ENERGY (Mouth Corners Drooping / Frown / Pout)
+  let sadEnergy = 0.0;
+  if (avgSmile < 0.16 && (frown > 0.08 || mouthShrug > 0.12 || browInnerUp > 0.12 || geom.metrics.au15_lip_depress > 0.06)) {
+    sadEnergy = (frown * 5.0) + (browInnerUp * 3.5) + (mouthShrug * 4.0) + (geom.metrics.au15_lip_depress * 8.0) + (geom.metrics.au1_inner_brow_raise * 3.0);
+  }
+
+  // 3. ANGRY ENERGY (Eyebrows Lowered/Furrowed & Scowl - STRICTLY when mouth is NOT drooping down)
   let angryEnergy = 0.0;
-  if (avgSmile < 0.20 && geom.metrics.mouthWidthRatio < 0.88 && browInnerUp < 0.16) {
-    const browDownSignal = browDown * 4.5;
-    const mouthTensionSignal = (mouthPress * 2.5) + (mouthRoll * 2.0);
+  const isFrowning = (geom.metrics.au15_lip_depress > 0.07 || frown > 0.10 || mouthShrug > 0.15);
+
+  if (avgSmile < 0.18 && geom.metrics.mouthWidthRatio < 0.88 && !isFrowning && browInnerUp < 0.16) {
+    const browDownSignal = browDown * 5.0;
+    const mouthTensionSignal = (mouthPress * 2.0) + (mouthRoll * 1.5);
     const sneerSignal = noseSneer * 2.5;
 
     let hotShoutSignal = 0.0;
@@ -217,13 +235,9 @@ function classifyWithNeuralBlendshapes(
       hotShoutSignal = (jawOpen * 2.5) + Math.max(browDownSignal, geom.metrics.au4_brow_furrow * 3.0);
     }
 
-    angryEnergy = browDownSignal + mouthTensionSignal + sneerSignal + (geom.metrics.au4_brow_furrow * 4.0) + hotShoutSignal;
-  }
-
-  // 3. SAD ENERGY
-  let sadEnergy = 0.0;
-  if (avgSmile < 0.15 && geom.metrics.mouthWidthRatio < 0.84) {
-    sadEnergy = (frown * 4.5) + (browInnerUp * 3.5) + (mouthShrug * 2.5) + (geom.metrics.au15_lip_depress * 3.5) + (geom.metrics.au1_inner_brow_raise * 3.0);
+    if (browDown > 0.12 || geom.metrics.au4_brow_furrow > 0.18 || hotShoutSignal > 0) {
+      angryEnergy = browDownSignal + mouthTensionSignal + sneerSignal + (geom.metrics.au4_brow_furrow * 4.0) + hotShoutSignal;
+    }
   }
 
   // 4. NEUTRAL ENERGY
