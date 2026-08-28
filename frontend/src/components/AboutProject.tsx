@@ -137,30 +137,37 @@ export const AboutProject: React.FC<AboutProjectProps> = ({
         border: `1.5px solid ${accentColor}35`
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.2rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.1rem' }}>
             <div style={{
-              width: '58px',
-              height: '58px',
-              borderRadius: '16px',
-              background: `linear-gradient(135deg, ${accentColor}, #6366F1)`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#FFFFFF',
-              fontSize: '1.35rem',
-              fontWeight: 800,
-              boxShadow: `0 8px 20px ${accentColor}40`
+              position: 'relative',
+              width: '68px',
+              height: '68px',
+              borderRadius: '20px',
+              overflow: 'hidden',
+              border: `2px solid ${accentColor}`,
+              boxShadow: `0 8px 20px ${accentColor}40`,
+              flexShrink: 0,
+              background: `linear-gradient(135deg, ${accentColor}, #6366F1)`
             }}>
-              PH
+              <img
+                src="/palak.jpg"
+                alt="Palak Harinkhede"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  display: 'block'
+                }}
+              />
             </div>
             <div>
               <div style={{ fontSize: '0.75rem', color: accentColor, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 Creator & Engineer
               </div>
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '0.1rem 0', color: 'var(--text-primary)' }}>
+              <h2 style={{ fontSize: '1.45rem', fontWeight: 800, margin: '0.1rem 0', color: 'var(--text-primary)' }}>
                 Palak Harinkhede
               </h2>
-              <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0 }}>
+              <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', margin: 0 }}>
                 AI / Machine Learning Engineer & Full-Stack Developer
               </p>
             </div>
@@ -174,6 +181,36 @@ export const AboutProject: React.FC<AboutProjectProps> = ({
         {/* Links Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '0.75rem' }}>
           
+          {/* Portfolio Link */}
+          <a
+            href="https://palakharinkhede4.github.io/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="glass-card"
+            style={{
+              padding: '0.9rem 1.1rem',
+              borderRadius: '14px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              textDecoration: 'none',
+              color: 'var(--text-primary)',
+              border: `1.5px solid ${accentColor}40`,
+              background: `${accentColor}0C`
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: `${accentColor}20`, color: accentColor, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Globe size={18} />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: accentColor }}>Personal Portfolio</div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>palakharinkhede4.github.io</div>
+              </div>
+            </div>
+            <ExternalLink size={14} color={accentColor} />
+          </a>
+
           {/* LinkedIn Link */}
           <a
             href="https://www.linkedin.com/in/palakharinkhede/"
@@ -256,35 +293,6 @@ export const AboutProject: React.FC<AboutProjectProps> = ({
               <div>
                 <div style={{ fontSize: '0.82rem', fontWeight: 700 }}>Project Repository</div>
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>View source code</div>
-              </div>
-            </div>
-            <ExternalLink size={14} color="var(--text-tertiary)" />
-          </a>
-
-          {/* Portfolio Link */}
-          <a
-            href="https://github.com/palakharinkhede4"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="glass-card"
-            style={{
-              padding: '0.9rem 1.1rem',
-              borderRadius: '14px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              textDecoration: 'none',
-              color: 'var(--text-primary)',
-              border: '1px solid var(--border-subtle)'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(245, 158, 11, 0.15)', color: '#F59E0B', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Globe size={18} />
-              </div>
-              <div>
-                <div style={{ fontSize: '0.82rem', fontWeight: 700 }}>Portfolio / Works</div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>More projects</div>
               </div>
             </div>
             <ExternalLink size={14} color="var(--text-tertiary)" />

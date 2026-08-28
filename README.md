@@ -182,3 +182,14 @@ npm run build
     ├── preprocess.py                        # Haar Cascade face cropper
     └── export_onnx.py                       # ONNX export & INT8 quantization
 ```
+
+---
+
+## 7. Creator & Author
+
+**Palak Harinkhede**  
+- **Portfolio**: [https://palakharinkhede4.github.io/](https://palakharinkhede4.github.io/)
+- **LinkedIn**: [https://www.linkedin.com/in/palakharinkhede/](https://www.linkedin.com/in/palakharinkhede/)
+- **GitHub**: [@palakharinkhede4](https://github.com/palakharinkhede4)
+- **Repository**: [Music-Recommendation-Using-Sentiment-Analysis](https://github.com/palakharinkhede4/Music-Recommendation-Using-Sentiment-Analysis)
+
