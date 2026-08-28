@@ -78,12 +78,10 @@ export const WebcamFeed: React.FC<WebcamFeedProps> = ({ onEmotionDetect, accentC
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Zap size={18} color={accentColor} />
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0 }}>Active Vision Stream</h2>
+          <h2 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0 }}>Live Camera Feed</h2>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-          <span>{fps} FPS</span>
-          <span>•</span>
-          <span>{(confidence * 100).toFixed(0)}% Match</span>
+          <span>Live View</span>
         </div>
       </div>
 
@@ -125,7 +123,7 @@ export const WebcamFeed: React.FC<WebcamFeedProps> = ({ onEmotionDetect, accentC
         ) : (
           <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
             <CameraOff size={48} style={{ marginBottom: '0.5rem', opacity: 0.5 }} />
-            <p style={{ fontSize: '0.9rem' }}>Webcam Stream Offline</p>
+            <p style={{ fontSize: '0.9rem' }}>Camera Offline</p>
           </div>
         )}
 
@@ -177,7 +175,7 @@ export const WebcamFeed: React.FC<WebcamFeedProps> = ({ onEmotionDetect, accentC
             border: '1px solid rgba(255,255,255,0.1)'
           }}>
             <Sparkles size={12} color="#10B981" />
-            <span>Neural Blendshape & FACS</span>
+            <span>Face Detection</span>
           </div>
         )}
       </div>
@@ -203,7 +201,7 @@ export const WebcamFeed: React.FC<WebcamFeedProps> = ({ onEmotionDetect, accentC
           }}
         >
           {isActive ? <CameraOff size={16} /> : <Camera size={16} />}
-          {isActive ? 'Pause Stream' : 'Start Stream'}
+          {isActive ? 'Pause Camera' : 'Start Camera'}
         </button>
 
         <button
@@ -229,7 +227,7 @@ export const WebcamFeed: React.FC<WebcamFeedProps> = ({ onEmotionDetect, accentC
           }}
         >
           <RefreshCw size={14} />
-          Demo Shift
+          Change Mood
         </button>
       </div>
 

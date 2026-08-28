@@ -113,7 +113,7 @@ export const App: React.FC = () => {
       mood: primary,
       timestamp: nowStr,
       snapshotUrl: snapshotDataUrl,
-      vibeTag: `${primary} Check-in`
+      vibeTag: primary
     };
 
     setSnapshotLogs(prev => [newLog, ...prev]);

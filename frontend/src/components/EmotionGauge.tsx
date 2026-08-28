@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { EmotionScore, EmotionType } from '../types';
 
 interface EmotionGaugeProps {
@@ -15,11 +15,11 @@ export const EmotionGauge: React.FC<EmotionGaugeProps> = ({ scores, primaryMood 
       
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.65rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-          <Activity size={14} color="var(--active-accent)" />
-          <span>Mood Confidence</span>
+          <Sparkles size={14} color="var(--active-accent)" />
+          <span>Current Vibe</span>
         </div>
         <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', fontWeight: 500 }}>
-          Sentiment Distribution
+          Mood Breakdown
         </span>
       </div>
 

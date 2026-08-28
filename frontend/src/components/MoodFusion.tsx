@@ -50,10 +50,10 @@ export const MoodFusion: React.FC<MoodFusionProps> = ({
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
           <Sliders size={16} color={accentColor} />
           <h3 style={{ fontSize: '0.95rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
-            Sentiment Blending Engine
+            Mood Mixer
           </h3>
         </div>
-        <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>Dual Sentiment Matrix</span>
+        <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>Blend two vibes</span>
       </div>
 
       <div style={{ display: 'flex', gap: '0.55rem', marginBottom: '0.9rem' }}>

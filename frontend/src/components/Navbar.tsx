@@ -43,7 +43,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               Mood<span style={{ color: accentColor }}>Beat</span>
             </h1>
             <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: 0, fontWeight: 500 }}>
-              Sentiment Music Player
+              Music for your mood
             </p>
           </div>
         </div>
@@ -108,7 +108,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               borderRadius: '12px',
               cursor: 'pointer'
             }}
-            title="Current sentiment. Click to capture new photo."
+            title="Current mood • Tap to change"
           >
             {snapshotUrl ? (
               <img

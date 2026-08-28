@@ -102,7 +102,7 @@ export const Playlist: React.FC<PlaylistProps> = ({
             }}
           >
             <Layers size={13} />
-            <span>All 12 Songs</span>
+            <span>All Songs</span>
           </button>
         </div>
 
@@ -238,7 +238,7 @@ export const Playlist: React.FC<PlaylistProps> = ({
           })
         ) : (
           <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: '0.85rem' }}>
-            No tracks found matching your query.
+            No songs found matching your search.
           </div>
         )}
       </div>

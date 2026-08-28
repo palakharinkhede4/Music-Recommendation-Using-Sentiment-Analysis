@@ -33,7 +33,7 @@ export const MoodJournal: React.FC<MoodJournalProps> = ({ logs, accentColor, onO
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
           <History size={16} color={accentColor} />
           <h3 style={{ fontSize: '0.95rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
-            Captured Photo History
+            Recent Moods
           </h3>
         </div>
 
@@ -54,7 +54,7 @@ export const MoodJournal: React.FC<MoodJournalProps> = ({ logs, accentColor, onO
           }}
         >
           <Camera size={13} />
-          <span>New Photo</span>
+          <span>Take Photo</span>
         </button>
       </div>
 

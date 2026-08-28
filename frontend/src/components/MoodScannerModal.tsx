@@ -210,11 +210,11 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
                 alignItems: 'center',
                 gap: '4px'
               }}>
-                <Sparkles size={11} /> FACS Biometric Engine
+                <Sparkles size={11} /> Smart Match
               </span>
             </div>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: '0.25rem 0 0 0' }}>
-              High-Precision Facial Action Coding System (FACS) Analysis
+              Look into the camera or upload a photo to match music with your vibe
             </p>
           </div>
 
@@ -367,9 +367,9 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
             fontWeight: 600,
             color: EMOTION_COLORS[detectedMood]
           }}>
-            Vibe Strategy: {VIBE_STRATEGIES[detectedMood]}
+            Recommended Vibes: {VIBE_STRATEGIES[detectedMood]}
             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '3px', fontWeight: 500 }}>
-              Confidence: {((detectedScores.find(s => s.emotion === detectedMood)?.score || 0.85) * 100).toFixed(0)}% • Biometric FACS Match
+              {((detectedScores.find(s => s.emotion === detectedMood)?.score || 0.85) * 100).toFixed(0)}% Match
             </div>
           </div>
         )}
@@ -398,7 +398,7 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
               }}
             >
               <Camera size={16} />
-              {isScanning ? 'Analyzing Facial Biometrics...' : 'Capture Photo'}
+              {isScanning ? 'Reading your mood...' : 'Capture Photo'}
             </button>
           ) : (
             <button

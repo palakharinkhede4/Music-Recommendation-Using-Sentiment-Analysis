@@ -33,12 +33,12 @@ export const MoodAnalytics: React.FC<MoodAnalyticsProps> = ({ history, accentCol
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
           <BarChart2 size={16} color={accentColor} />
           <h2 style={{ fontSize: '0.95rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
-            Session Sentiment Distribution
+            Mood Summary
           </h2>
         </div>
         <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: '0.3rem', fontWeight: 600 }}>
           <Clock size={12} />
-          <span>{history.length} Live Check-Ins</span>
+          <span>{history.length} Mood Checks</span>
         </div>
       </div>
 
@@ -66,7 +66,7 @@ export const MoodAnalytics: React.FC<MoodAnalyticsProps> = ({ history, accentCol
                 {pct}%
               </div>
               <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>
-                {cnt} {cnt === 1 ? 'scan' : 'scans'}
+                {cnt} {cnt === 1 ? 'time' : 'times'}
               </div>
             </div>
           );
@@ -75,7 +75,7 @@ export const MoodAnalytics: React.FC<MoodAnalyticsProps> = ({ history, accentCol
 
       <div>
         <div style={{ fontSize: '0.74rem', color: 'var(--text-tertiary)', marginBottom: '0.4rem', fontWeight: 600 }}>
-          Timeline Sequence
+          Mood Timeline
         </div>
         <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', maxHeight: '40px', overflow: 'hidden' }}>
           {history.slice(-25).map((item, idx) => (
@@ -89,7 +89,7 @@ export const MoodAnalytics: React.FC<MoodAnalyticsProps> = ({ history, accentCol
                 boxShadow: `0 0 6px ${EMOTION_COLORS[item]}55`,
                 display: 'inline-block'
               }}
-              title={`Scan #${idx + 1}: ${item}`}
+              title={`Mood #${idx + 1}: ${item}`}
             />
           ))}
         </div>

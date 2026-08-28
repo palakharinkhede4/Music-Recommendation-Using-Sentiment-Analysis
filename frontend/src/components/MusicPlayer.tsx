@@ -117,7 +117,7 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
             gap: '0.35rem'
           }}>
             <Sparkles size={12} />
-            <span>{currentMood} Mood Vibe</span>
+            <span>{currentMood} Vibe</span>
           </span>
 
           <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
@@ -140,7 +140,7 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
               alignItems: 'center',
               gap: '0.35rem'
             }}
-            title="Auto-switch songs when mood changes"
+            title="Auto-play songs matching your mood"
           >
             <RefreshCw size={12} style={{ animation: autoSync ? 'spin 8s linear infinite' : 'none' }} />
             <span>Auto Sync</span>
