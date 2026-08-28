@@ -212,3 +212,14 @@ input[type="range"]::-moz-range-thumb {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Radio, Camera, Sun, Moon } from 'lucide-react';
+import { Radio, Camera, Sun, Moon, Info } from 'lucide-react';
 import { EmotionType } from '../types';
 
 interface NavbarProps {
@@ -7,8 +7,11 @@ interface NavbarProps {
   snapshotUrl: string | null;
   accentColor: string;
   theme: 'light' | 'dark';
+  activeView: 'player' | 'about';
   onToggleTheme: () => void;
   onOpenScanner: () => void;
+  onToggleAbout: () => void;
+  onNavigatePlayer: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -16,15 +19,22 @@ export const Navbar: React.FC<NavbarProps> = ({
   snapshotUrl,
   accentColor,
   theme,
+  activeView,
   onToggleTheme,
-  onOpenScanner
+  onOpenScanner,
+  onToggleAbout,
+  onNavigatePlayer
 }) => {
   return (
     <header className="glass-panel" style={{ padding: '0.85rem 1.4rem', marginBottom: '1.25rem', borderRadius: '20px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
         
         {/* Brand Icon & Name */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div
+          onClick={onNavigatePlayer}
+          style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}
+          title="Go to Music Player"
+        >
           <div style={{
             background: `linear-gradient(135deg, ${accentColor}, #6366F1)`,
             width: '40px',
@@ -49,7 +59,30 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Action Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+          
+          {/* About Project Button */}
+          <button
+            onClick={onToggleAbout}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              padding: '0.55rem 0.95rem',
+              background: activeView === 'about' ? `${accentColor}20` : 'var(--bg-surface-hover)',
+              border: `1.5px solid ${activeView === 'about' ? accentColor : 'var(--border-subtle)'}`,
+              borderRadius: '12px',
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              color: activeView === 'about' ? accentColor : 'var(--text-primary)',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
+            title="View system architecture, project working, and creator information"
+          >
+            <Info size={15} color={activeView === 'about' ? accentColor : 'currentColor'} />
+            <span>About Project</span>
+          </button>
           
           {/* Light / Dark Mode Toggle */}
           <button
