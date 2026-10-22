@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Camera, RefreshCw, Upload, CheckCircle2, AlertCircle, Scan, X, Sparkles } from 'lucide-react';
+import { Camera, RefreshCw, Upload, CheckCircle2, AlertCircle, Scan, X } from 'lucide-react';
 import { EmotionType, EmotionScore } from '../types';
 import {
   analyzeImageWithFACS,
@@ -29,6 +29,31 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
 }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    dialogRef.current?.querySelector<HTMLButtonElement>('button')?.focus();
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+      if (event.key !== 'Tab') return;
+      const controls = dialogRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]), [tabindex="0"]');
+      if (!controls?.length) return;
+      const first = controls[0];
+      const last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('keydown', handleKey);
+      document.body.style.overflow = previousOverflow;
+      previousFocus?.focus({ preventScroll: true });
+    };
+  }, [isOpen, onClose]);
 
   const [isCameraStarted, setIsCameraStarted] = useState<boolean>(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
@@ -170,19 +195,9 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      backgroundColor: 'var(--modal-backdrop)',
-      backdropFilter: 'blur(16px)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 9999,
-      padding: '1rem'
-    }}>
+    <div className="scanner-overlay">
       
-      <div className="glass-panel" style={{
+      <div ref={dialogRef} className="surface scanner-dialog" role="dialog" aria-modal="true" aria-labelledby="scanner-heading" aria-describedby="scanner-description" style={{
         width: '100%',
         maxWidth: '490px',
         padding: '1.5rem',
@@ -195,31 +210,19 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+              <h2 id="scanner-heading" style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
                 Mood Scanner
               </h2>
-              <span style={{
-                fontSize: '0.68rem',
-                padding: '3px 10px',
-                borderRadius: '999px',
-                background: 'rgba(16, 185, 129, 0.15)',
-                color: '#10B981',
-                border: '1px solid rgba(16, 185, 129, 0.3)',
-                fontWeight: 700,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}>
-                <Sparkles size={11} /> Smart Match
-              </span>
+
             </div>
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: '0.25rem 0 0 0' }}>
-              Look into the camera or upload a photo to match music with your vibe
+            <p id="scanner-description" style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: '0.25rem 0 0 0' }}>
+              Take a photo or upload a selfie.
             </p>
           </div>
 
           <button
             onClick={onClose}
+            aria-label="Close mood scanner"
             style={{
               background: 'var(--bg-surface-hover)',
               border: 'none',
@@ -238,7 +241,7 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
         </div>
 
         {/* Viewfinder Frame */}
-        <div style={{
+        <div className="scanner-viewfinder" style={{
           position: 'relative',
           width: '100%',
           height: '280px',
@@ -249,7 +252,6 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          boxShadow: `0 0 25px ${detectedMood ? EMOTION_COLORS[detectedMood] + '22' : 'transparent'}`
         }}>
           
           {snapshotUrl ? (
@@ -299,8 +301,8 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
                 style={{
                   padding: '0.45rem 1rem',
                   borderRadius: '10px',
-                  background: 'rgba(255, 255, 255, 0.12)',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  background: '#30333f',
+                  border: '1px solid #535663',
                   color: '#FFFFFF',
                   fontSize: '0.8rem',
                   cursor: 'pointer',
@@ -335,8 +337,7 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
               position: 'absolute',
               bottom: '12px',
               left: '12px',
-              background: 'rgba(15, 23, 42, 0.92)',
-              backdropFilter: 'blur(10px)',
+              background: '#17181c',
               padding: '0.4rem 1rem',
               borderRadius: '20px',
               border: `1.5px solid ${EMOTION_COLORS[detectedMood]}`,
@@ -346,7 +347,6 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              boxShadow: `0 4px 14px ${EMOTION_COLORS[detectedMood]}44`
             }}>
               <CheckCircle2 size={16} />
               Detected: {detectedMood}
@@ -367,15 +367,15 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
             fontWeight: 600,
             color: EMOTION_COLORS[detectedMood]
           }}>
-            Recommended Vibes: {VIBE_STRATEGIES[detectedMood]}
+            {VIBE_STRATEGIES[detectedMood]}
             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '3px', fontWeight: 500 }}>
-              {((detectedScores.find(s => s.emotion === detectedMood)?.score || 0.85) * 100).toFixed(0)}% Match
+              {((detectedScores.find(s => s.emotion === detectedMood)?.score || 0.85) * 100).toFixed(0)}% confidence
             </div>
           </div>
         )}
 
         {/* Action Buttons */}
-        <div style={{ display: 'flex', gap: '0.65rem', marginTop: '1rem' }}>
+        <div className="scanner-actions" style={{ display: 'flex', gap: '0.65rem', marginTop: '1rem' }}>
           {!snapshotUrl ? (
             <button
               onClick={captureSnapshot}
@@ -384,8 +384,8 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
                 flex: 1,
                 padding: '0.75rem',
                 borderRadius: '12px',
-                background: accentColor,
-                color: '#FFFFFF',
+                background: 'var(--brand)',
+                color: 'var(--brand-ink)',
                 fontWeight: 700,
                 border: 'none',
                 cursor: 'pointer',
@@ -394,11 +394,10 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
                 justifyContent: 'center',
                 gap: '0.45rem',
                 fontSize: '0.85rem',
-                boxShadow: `0 4px 14px ${accentColor}40`
               }}
             >
               <Camera size={16} />
-              {isScanning ? 'Reading your mood...' : 'Capture Photo'}
+              {isScanning ? 'Reading your mood...' : 'Capture mood'}
             </button>
           ) : (
             <button
@@ -428,7 +427,12 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
             </button>
           )}
 
-          <label style={{
+          <label role="button" tabIndex={0} onKeyDown={event => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              event.currentTarget.querySelector('input')?.click();
+            }
+          }} style={{
             padding: '0.75rem 1rem',
             borderRadius: '12px',
             background: 'var(--bg-surface-hover)',
@@ -442,7 +446,7 @@ export const MoodScannerModal: React.FC<MoodScannerModalProps> = ({
             fontSize: '0.85rem'
           }}>
             <Upload size={16} />
-            Upload Photo
+            Upload photo
             <input
               type="file"
               accept="image/*"

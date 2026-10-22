@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, RefreshCw, Camera, Sparkles } from 'lucide-react';
+import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, RefreshCw } from 'lucide-react';
 import { Track, EmotionType } from '../types';
 
 interface MusicPlayerProps {
@@ -10,7 +10,6 @@ interface MusicPlayerProps {
   onPrev: () => void;
   autoSync: boolean;
   onToggleAutoSync: () => void;
-  onOpenScanner: () => void;
 }
 
 export const MusicPlayer: React.FC<MusicPlayerProps> = ({
@@ -20,8 +19,7 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
   onNext,
   onPrev,
   autoSync,
-  onToggleAutoSync,
-  onOpenScanner
+  onToggleAutoSync
 }) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
@@ -79,289 +77,52 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
   };
 
   if (!track) {
-    return (
-      <div className="glass-panel" style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-        <p>No track selected</p>
-      </div>
-    );
+    return <section className="player-panel surface empty-state"><p>Loading your rotation…</p></section>;
   }
 
   return (
-    <div className="glass-panel" style={{
-      padding: '1.6rem',
-      borderRadius: '24px',
-      position: 'relative',
-      overflow: 'hidden'
-    }}>
-      
-      <audio
-        ref={audioRef}
-        src={track.audioUrl}
-        onTimeUpdate={handleTimeUpdate}
-        onEnded={onNext}
-      />
-
-      {/* Top Meta Bar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{
-            fontSize: '0.75rem',
-            fontWeight: 700,
-            padding: '0.25rem 0.75rem',
-            borderRadius: '20px',
-            background: `${accentColor}18`,
-            color: accentColor,
-            border: `1px solid ${accentColor}30`,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.35rem'
-          }}>
-            <Sparkles size={12} />
-            <span>{currentMood} Vibe</span>
-          </span>
-
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
-            {track.bpm} BPM
-          </span>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          {/* Auto Mood Sync Toggle */}
-          <button
-            onClick={onToggleAutoSync}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: autoSync ? accentColor : 'var(--text-tertiary)',
-              fontSize: '0.75rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.35rem'
-            }}
-            title="Auto-play songs matching your mood"
-          >
-            <RefreshCw size={12} style={{ animation: autoSync ? 'spin 8s linear infinite' : 'none' }} />
-            <span>Auto Sync</span>
-          </button>
-        </div>
+    <section className="player-panel surface" aria-labelledby="player-heading">
+      <audio ref={audioRef} src={track.audioUrl} onTimeUpdate={handleTimeUpdate} onEnded={onNext} />
+      <div className="section-heading">
+        <h2 id="player-heading">Now playing</h2>
+        <button className={'sync-button ' + (autoSync ? 'enabled' : '')} onClick={onToggleAutoSync}
+          aria-pressed={autoSync} title="Automatically select music after a mood scan">
+          <RefreshCw size={13} /><span>Auto sync</span><i />
+        </button>
       </div>
-
-      {/* Main Track Display Row */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '1.4rem' }}>
-        
-        {/* Album Cover Art */}
-        <div style={{
-          position: 'relative',
-          width: '100px',
-          height: '100px',
-          borderRadius: '18px',
-          overflow: 'hidden',
-          boxShadow: `0 10px 25px -5px ${accentColor}40`,
-          flexShrink: 0,
-          border: '1px solid var(--border-subtle)'
-        }}>
-          <img src={track.coverUrl} alt={track.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          
-          {isPlaying && (
-            <div style={{
-              position: 'absolute',
-              inset: 0,
-              background: 'rgba(0, 0, 0, 0.35)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backdropFilter: 'blur(2px)'
-            }}>
-              <div className="equalizer-container">
-                <div className={`equalizer-bar ${isPlaying ? 'playing' : ''}`} />
-                <div className={`equalizer-bar ${isPlaying ? 'playing' : ''}`} />
-                <div className={`equalizer-bar ${isPlaying ? 'playing' : ''}`} />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Title, Artist, Genre Info */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <h2 style={{
-            fontSize: '1.4rem',
-            fontWeight: 800,
-            margin: 0,
-            color: 'var(--text-primary)',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            letterSpacing: '-0.02em'
-          }}>
-            {track.title}
-          </h2>
-
-          <p style={{
-            fontSize: '0.95rem',
-            color: 'var(--text-secondary)',
-            margin: '0.2rem 0 0 0',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            fontWeight: 500
-          }}>
-            {track.artist}
-          </p>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.45rem' }}>
-            <span style={{
-              fontSize: '0.72rem',
-              padding: '0.15rem 0.55rem',
-              borderRadius: '8px',
-              background: 'var(--bg-surface-hover)',
-              color: 'var(--text-secondary)',
-              fontWeight: 600
-            }}>
-              {track.genre}
-            </span>
-          </div>
-        </div>
-
+      <div className="album-art">
+        <img key={track.id} src={track.coverUrl} alt={track.album + ' artwork'} onError={e => { if (!e.currentTarget.src.endsWith('/cover-fallback.svg')) e.currentTarget.src = '/cover-fallback.svg'; }} />
+        <span className="art-label">{track.genre}</span>
+        {isPlaying && <div className="art-playing" aria-label="Playing"><span /><span /><span /></div>}
       </div>
-
-      {/* Track Progress Bar */}
-      <div style={{ marginBottom: '1.25rem' }}>
-        <input
-          type="range"
-          min={0}
-          max={duration || 100}
-          value={currentTime}
-          onChange={handleSeek}
-          style={{
-            width: '100%',
-            cursor: 'pointer'
-          }}
-        />
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '0.35rem', fontWeight: 600 }}>
-          <span>{formatTime(currentTime)}</span>
-          <span>{formatTime(duration)}</span>
-        </div>
+      <div className="player-track">
+        <span className="eyebrow">{track.album}</span>
+        <h3 title={track.title}>{track.title}</h3>
+        <p>{track.artist}</p>
       </div>
-
-      {/* Control Buttons Bar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        
-        {/* Volume Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', width: '110px' }}>
-          <button
-            onClick={() => {
-              if (audioRef.current) {
-                audioRef.current.muted = !isMuted;
-                setIsMuted(!isMuted);
-              }
-            }}
-            style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-            title={isMuted ? "Unmute" : "Mute"}
-          >
+      <div className="track-progress">
+        <input aria-label="Playback position" type="range" min={0} max={duration || 100} value={currentTime} onChange={handleSeek}
+          style={{ background: `linear-gradient(to right, ${accentColor} ${currentTime / (duration || 100) * 100}%, var(--slider-track) 0%)` }} />
+        <div><span>{formatTime(currentTime)}</span><span>{formatTime(duration || track.duration)}</span></div>
+      </div>
+      <div className="playback-controls">
+        <button className="icon-button skip-button" onClick={onPrev} aria-label="Previous track" title="Previous track"><SkipBack size={21} fill="currentColor" /></button>
+        <button className="play-button" onClick={togglePlay} aria-label={isPlaying ? 'Pause' : 'Play'} title={isPlaying ? 'Pause' : 'Play'}>
+          {isPlaying ? <Pause size={25} fill="currentColor" /> : <Play size={25} fill="currentColor" />}
+        </button>
+        <button className="icon-button skip-button" onClick={onNext} aria-label="Next track" title="Next track"><SkipForward size={21} fill="currentColor" /></button>
+      </div>
+      <div className="player-bottom">
+        <div className="volume-controls">
+          <button className="icon-button" onClick={() => {
+            if (audioRef.current) { audioRef.current.muted = !isMuted; setIsMuted(!isMuted); }
+          }} aria-label={isMuted ? 'Unmute' : 'Mute'} title={isMuted ? 'Unmute' : 'Mute'}>
             {isMuted ? <VolumeX size={17} /> : <Volume2 size={17} />}
           </button>
-          <input
-            type="range"
-            min={0}
-            max={1}
-            step={0.05}
-            value={isMuted ? 0 : volume}
-            onChange={handleVolumeChange}
-            style={{ width: '65px' }}
-          />
+          <input aria-label="Volume" type="range" min={0} max={1} step={0.05} value={isMuted ? 0 : volume} onChange={handleVolumeChange} />
         </div>
-
-        {/* Playback Controls (Previous, Play/Pause, Next) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.1rem' }}>
-          <button
-            onClick={onPrev}
-            style={{
-              background: 'var(--bg-surface-hover)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: '50%',
-              width: '38px',
-              height: '38px',
-              color: 'var(--text-primary)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'transform 0.1s ease'
-            }}
-            title="Previous Track"
-          >
-            <SkipBack size={17} />
-          </button>
-
-          <button
-            onClick={togglePlay}
-            style={{
-              background: accentColor,
-              border: 'none',
-              borderRadius: '50%',
-              width: '52px',
-              height: '52px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#FFFFFF',
-              cursor: 'pointer',
-              boxShadow: `0 6px 20px ${accentColor}55`,
-              transition: 'transform 0.15s ease'
-            }}
-            title={isPlaying ? "Pause" : "Play"}
-          >
-            {isPlaying ? <Pause size={22} /> : <Play size={22} style={{ marginLeft: '2px' }} />}
-          </button>
-
-          <button
-            onClick={onNext}
-            style={{
-              background: 'var(--bg-surface-hover)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: '50%',
-              width: '38px',
-              height: '38px',
-              color: 'var(--text-primary)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'transform 0.1s ease'
-            }}
-            title="Next Track"
-          >
-            <SkipForward size={17} />
-          </button>
-        </div>
-
-        {/* Quick Detect Button in Player */}
-        <div style={{ width: '110px', textAlign: 'right' }}>
-          <button
-            onClick={onOpenScanner}
-            style={{
-              background: 'none',
-              border: `1px solid ${accentColor}40`,
-              padding: '0.35rem 0.65rem',
-              borderRadius: '10px',
-              color: accentColor,
-              fontSize: '0.74rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.3rem'
-            }}
-          >
-            <Camera size={13} />
-            <span>Scan</span>
-          </button>
-        </div>
-
+        <span className="muted">{track.bpm} BPM</span>
       </div>
-
-    </div>
+    </section>
   );
 };

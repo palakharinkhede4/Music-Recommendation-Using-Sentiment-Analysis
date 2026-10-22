@@ -29,6 +29,8 @@ export const App: React.FC = () => {
   // Navigation View: 'player' (Default) or 'about' (System Architecture & Owner Info)
   const [activeView, setActiveView] = useState<'player' | 'about'>('player');
 
+  useEffect(() => { window.scrollTo({ top: 0 }); }, [activeView]);
+
   // Light / Dark Theme State defaulting to System Preferences
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const saved = localStorage.getItem('moodbeat_theme');
@@ -145,90 +147,38 @@ export const App: React.FC = () => {
 
   return (
     <div className="app-container">
-      
-      {/* Top Navbar with Theme Switcher, Detect Mood button, User Snapshot, and About Project */}
-      <Navbar
-        currentMood={currentMood}
-        snapshotUrl={latestSnapshotUrl}
-        accentColor={accentColor}
-        theme={theme}
-        activeView={activeView}
-        onToggleTheme={handleToggleTheme}
+      <Navbar currentMood={currentMood} snapshotUrl={latestSnapshotUrl} accentColor={accentColor}
+        theme={theme} activeView={activeView} onToggleTheme={handleToggleTheme}
         onOpenScanner={() => setIsScannerOpen(true)}
         onToggleAbout={() => setActiveView(activeView === 'player' ? 'about' : 'player')}
-        onNavigatePlayer={() => setActiveView('player')}
-      />
-
-      {activeView === 'about' ? (
-        /* Detailed About Project Page: Owner Info, Architecture & Working */
-        <AboutProject
-          onBack={() => setActiveView('player')}
-          accentColor={accentColor}
-          currentMood={currentMood}
-        />
-      ) : (
-        /* Main Music Experience Grid */
-        <>
-          {/* Mood Confidence Metrics Widget */}
-          <EmotionGauge
-            scores={emotionScores}
-            primaryMood={currentMood}
-          />
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.25rem' }}>
-            
-            <MusicPlayer
-              track={currentTrack}
-              currentMood={currentMood}
-              accentColor={accentColor}
-              onNext={handleNextTrack}
-              onPrev={handlePrevTrack}
-              autoSync={autoSync}
-              onToggleAutoSync={() => setAutoSync(!autoSync)}
-              onOpenScanner={() => setIsScannerOpen(true)}
-            />
-
-            <Playlist
-              tracks={allTracks}
-              currentTrackId={currentTrack?.id || null}
-              selectedMood={selectedFilterMood}
-              accentColor={accentColor}
-              isLibraryMode={isLibraryMode}
-              onSelectTrack={(t) => setCurrentTrack(t)}
-              onFilterMood={(m) => {
-                setSelectedFilterMood(m);
-                fetchRecommendations(m).then(t => setAllTracks(t));
-              }}
-              onToggleLibrary={() => setIsLibraryMode(!isLibraryMode)}
-            />
-
-          </div>
-
-          {/* Session Snapshots & Analytics */}
-          <MoodJournal
-            logs={snapshotLogs}
-            accentColor={accentColor}
-            onOpenScanner={() => setIsScannerOpen(true)}
-          />
-
-          <MoodAnalytics
-            history={moodHistory}
-            accentColor={accentColor}
-          />
-        </>
-      )}
-
-      {/* Camera Facial Scan Modal */}
-      <MoodScannerModal
-        isOpen={isScannerOpen}
-        onClose={() => setIsScannerOpen(false)}
-        onScanComplete={handleScanComplete}
-        accentColor={accentColor}
-      />
-
+        onNavigatePlayer={() => setActiveView('player')} />
+      <main className="workspace" id="main-content">
+        {activeView === 'about' ? (
+          <AboutProject onBack={() => setActiveView('player')} accentColor={accentColor} currentMood={currentMood} />
+        ) : (
+          <>
+            <header className="workspace-header">
+              <h1>Your rotation<span>.</span></h1>
+              <div className="edition-mark" aria-hidden="true"><span /><span /><span /><span /><span /><span /><span /><span /><span /></div>
+            </header>
+            <div className="listening-grid">
+              <div className="collection-column">
+                <EmotionGauge scores={emotionScores} primaryMood={currentMood} hasScanned={snapshotLogs.length > 0} />
+                <Playlist tracks={allTracks} currentTrackId={currentTrack?.id || null} selectedMood={selectedFilterMood}
+                  accentColor={accentColor} isLibraryMode={isLibraryMode} onSelectTrack={setCurrentTrack}
+                  onFilterMood={(m) => { setSelectedFilterMood(m); fetchRecommendations(m).then(t => setAllTracks(t)); }}
+                  onToggleLibrary={() => setIsLibraryMode(!isLibraryMode)} />
+                <MoodAnalytics history={moodHistory} accentColor={accentColor} />
+              </div>
+              <MusicPlayer track={currentTrack} currentMood={currentMood} accentColor={accentColor}
+                onNext={handleNextTrack} onPrev={handlePrevTrack} autoSync={autoSync} onToggleAutoSync={() => setAutoSync(!autoSync)} />
+            </div>
+            <MoodJournal logs={snapshotLogs} accentColor={accentColor} onOpenScanner={() => setIsScannerOpen(true)} />
+          </>
+        )}
+      </main>
+      <MoodScannerModal isOpen={isScannerOpen} onClose={() => setIsScannerOpen(false)} onScanComplete={handleScanComplete} accentColor={accentColor} />
     </div>
   );
 };
-
 export default App;
-

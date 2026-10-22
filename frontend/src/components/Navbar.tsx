@@ -1,5 +1,5 @@
 import React from 'react';
-import { Radio, Camera, Sun, Moon, Info } from 'lucide-react';
+import { Radio, Camera, Sun, Moon, Info, Disc3 } from 'lucide-react';
 import { EmotionType } from '../types';
 
 interface NavbarProps {
@@ -14,172 +14,39 @@ interface NavbarProps {
   onNavigatePlayer: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({
-  currentMood,
-  snapshotUrl,
-  accentColor,
-  theme,
-  activeView,
-  onToggleTheme,
-  onOpenScanner,
-  onToggleAbout,
-  onNavigatePlayer
-}) => {
-  return (
-    <header className="glass-panel" style={{ padding: '0.85rem 1.4rem', marginBottom: '1.25rem', borderRadius: '20px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
-        
-        {/* Brand Icon & Name */}
-        <div
-          onClick={onNavigatePlayer}
-          style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}
-          title="Go to Music Player"
-        >
-          <div style={{
-            background: `linear-gradient(135deg, ${accentColor}, #6366F1)`,
-            width: '40px',
-            height: '40px',
-            borderRadius: '12px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: `0 4px 14px ${accentColor}35`,
-            color: '#FFFFFF'
-          }}>
-            <Radio size={20} />
-          </div>
-          <div>
-            <h1 style={{ fontSize: '1.3rem', fontWeight: 800, margin: 0, lineHeight: 1.1, letterSpacing: '-0.02em' }}>
-              Mood<span style={{ color: accentColor }}>Beat</span>
-            </h1>
-            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: 0, fontWeight: 500 }}>
-              Music for your mood
-            </p>
-          </div>
-        </div>
-
-        {/* Action Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-          
-          {/* About Project Button */}
-          <button
-            onClick={onToggleAbout}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              padding: '0.55rem 0.95rem',
-              background: activeView === 'about' ? `${accentColor}20` : 'var(--bg-surface-hover)',
-              border: `1.5px solid ${activeView === 'about' ? accentColor : 'var(--border-subtle)'}`,
-              borderRadius: '12px',
-              fontSize: '0.82rem',
-              fontWeight: 700,
-              color: activeView === 'about' ? accentColor : 'var(--text-primary)',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease'
-            }}
-            title="View system architecture, project working, and creator information"
-          >
-            <Info size={15} color={activeView === 'about' ? accentColor : 'currentColor'} />
-            <span>About Project</span>
-          </button>
-          
-          {/* Light / Dark Mode Toggle */}
-          <button
-            onClick={onToggleTheme}
-            style={{
-              width: '38px',
-              height: '38px',
-              borderRadius: '12px',
-              border: '1px solid var(--border-subtle)',
-              background: 'var(--bg-surface-hover)',
-              color: 'var(--text-primary)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.15s ease'
-            }}
-            title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
-          >
-            {theme === 'light' ? <Moon size={17} /> : <Sun size={17} />}
-          </button>
-
-          {/* Primary Detect Mood Button */}
-          <button
-            onClick={onOpenScanner}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              padding: '0.55rem 1.1rem',
-              background: accentColor,
-              border: 'none',
-              borderRadius: '12px',
-              fontSize: '0.85rem',
-              fontWeight: 700,
-              color: '#FFFFFF',
-              cursor: 'pointer',
-              boxShadow: `0 4px 14px ${accentColor}40`,
-              transition: 'transform 0.15s ease, box-shadow 0.15s ease'
-            }}
-          >
-            <Camera size={16} />
-            <span>Detect Mood</span>
-          </button>
-
-          {/* User Snapshot / Mood Chip */}
-          <div
-            onClick={onOpenScanner}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              padding: '0.2rem 0.65rem 0.2rem 0.25rem',
-              background: 'var(--bg-surface-hover)',
-              border: `1px solid ${accentColor}35`,
-              borderRadius: '12px',
-              cursor: 'pointer'
-            }}
-            title="Current mood • Tap to change"
-          >
-            {snapshotUrl ? (
-              <img
-                src={snapshotUrl}
-                alt="Face Snapshot"
-                style={{
-                  width: '30px',
-                  height: '30px',
-                  borderRadius: '9px',
-                  objectFit: 'cover',
-                  border: `1.5px solid ${accentColor}`
-                }}
-              />
-            ) : (
-              <div style={{
-                width: '30px',
-                height: '30px',
-                borderRadius: '9px',
-                backgroundColor: `${accentColor}20`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: accentColor,
-                fontWeight: 700,
-                fontSize: '0.75rem'
-              }}>
-                <Camera size={15} />
-              </div>
-            )}
-
-            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: accentColor }}>
-              {currentMood}
-            </span>
-          </div>
-
-        </div>
-
+export const Navbar: React.FC<NavbarProps> = ({ currentMood, snapshotUrl, theme, activeView,
+  onToggleTheme, onOpenScanner, onToggleAbout, onNavigatePlayer }) => (
+  <aside className="sidebar">
+    <button className="brand" onClick={onNavigatePlayer} aria-label="MoodBeat home">
+      <span className="brand-mark"><Radio size={23} /></span>
+      <span>MoodBeat<span className="brand-dot">.</span></span>
+    </button>
+    <nav className="main-nav" aria-label="Main navigation">
+      <button className={'nav-item ' + (activeView === 'player' ? 'active' : '')}
+        aria-current={activeView === 'player' ? 'page' : undefined} onClick={onNavigatePlayer}>
+        <Disc3 size={19} /><span>Listen</span>
+      </button>
+      <button className={'nav-item ' + (activeView === 'about' ? 'active' : '')}
+        aria-label="About the project"
+        aria-current={activeView === 'about' ? 'page' : undefined} onClick={onToggleAbout}>
+        <Info size={19} /><span>About</span>
+      </button>
+    </nav>
+    <div className="sidebar-bottom">
+      <div className="mood-invite">
+        <button className="primary-button" onClick={onOpenScanner}><Camera size={18} />Detect mood</button>
       </div>
-    </header>
-  );
-};
+      <div className="sidebar-footer">
+        <button className="profile-mood" onClick={onOpenScanner} aria-label={'Current mood: ' + currentMood + '. Scan again'}>
+          {snapshotUrl ? <img src={snapshotUrl} alt="Latest mood snapshot" /> : <span className="mood-avatar"><Radio size={18} /></span>}
+          <span><small>Current mood</small><strong>{currentMood}</strong></span>
+        </button>
+        <button className="icon-button" onClick={onToggleTheme}
+          aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+          title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}>
+          {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+        </button>
+      </div>
+    </div>
+  </aside>
+);
